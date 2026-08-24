@@ -98,6 +98,50 @@ const SEED_LAPTOPS = [
   }
 ];
 
+// Helper untuk inisialisasi list kriteria dengan data tersimpan di localStorage
+function getInitialKriteriaList() {
+  const masterKriteria = [
+    { id: 1, kode: 'C1', nama: 'Harga Beli', tipe: 'Cost', rank: 1, bobot: 0, keterangan: 'Nominal harga beli toko (makin hemat makin prioritas)' },
+    { id: 2, kode: 'C2', nama: 'Processor (CPU)', tipe: 'Benefit', rank: 2, bobot: 0, keterangan: 'Performa komputasi inti prosesor' },
+    { id: 3, kode: 'C3', nama: 'Kapasitas RAM', tipe: 'Benefit', rank: 3, bobot: 0, keterangan: 'Memori multitasking dan rendering' },
+    { id: 4, kode: 'C4', nama: 'Kapasitas SSD', tipe: 'Benefit', rank: 4, bobot: 0, keterangan: 'Kapasitas storage penyimpanan sistem' },
+    { id: 5, kode: 'C5', nama: 'Kartu Grafis (GPU)', tipe: 'Benefit', rank: 5, bobot: 0, keterangan: 'Performa visual, gaming, dan 3D rendering' },
+    { id: 6, kode: 'C6', nama: 'Daya Baterai', tipe: 'Benefit', rank: 6, bobot: 0, keterangan: 'Kapasitas baterai laptop (Wh)' },
+    { id: 7, kode: 'C7', nama: 'Portabilitas (Berat)', tipe: 'Cost', rank: 7, bobot: 0, keterangan: 'Bobot fisik laptop (makin ringan makin baik)' },
+    { id: 8, kode: 'C8', nama: 'Kualitas Layar', tipe: 'Benefit', rank: 8, bobot: 0, keterangan: 'Skor kualitas panel, warna, dan refresh rate' }
+  ];
+
+  try {
+    const savedRanks = localStorage.getItem('spk_criteria_ranks');
+    if (savedRanks) {
+      const parsed = JSON.parse(savedRanks);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(saved => {
+          const target = masterKriteria.find(k => k.id === saved.id || k.kode === saved.kode);
+          if (target && typeof saved.rank === 'number' && saved.rank >= 1 && saved.rank <= 8) {
+            target.rank = Number(saved.rank);
+          }
+        });
+      }
+    }
+  } catch(e) {
+    console.warn("Gagal membaca saved ranks:", e);
+  }
+
+  return masterKriteria;
+}
+
+// Helper untuk inisialisasi filter ketersediaan tersimpan
+function getInitialFilter() {
+  try {
+    const saved = localStorage.getItem('spk_filter_status');
+    if (saved && ['all', 'ready', 'indent'].includes(saved)) {
+      return saved;
+    }
+  } catch(e) {}
+  return 'all';
+}
+
 function spkApp() {
   return {
     dbStatus: 'checking', // 'online' | 'table_missing' | 'checking'
@@ -108,22 +152,13 @@ function spkApp() {
     copiedSql: false,
     isEditMode: false,
     isSaving: false,
-    filterStatus: 'all',
+    filterStatus: getInitialFilter(),
     toasts: [],
     lastCalculatedAt: null,
     sqlScriptText: window.SupabaseService ? window.SupabaseService.SQL_SCHEMA : '',
     
-    // Master 8 Kriteria Keputusan
-    kriteriaList: [
-      { id: 1, kode: 'C1', nama: 'Harga Beli', tipe: 'Cost', rank: 1, bobot: 0, keterangan: 'Nominal harga beli toko (makin hemat makin prioritas)' },
-      { id: 2, kode: 'C2', nama: 'Processor (CPU)', tipe: 'Benefit', rank: 2, bobot: 0, keterangan: 'Performa komputasi inti prosesor' },
-      { id: 3, kode: 'C3', nama: 'Kapasitas RAM', tipe: 'Benefit', rank: 3, bobot: 0, keterangan: 'Memori multitasking dan rendering' },
-      { id: 4, kode: 'C4', nama: 'Kapasitas SSD', tipe: 'Benefit', rank: 4, bobot: 0, keterangan: 'Kapasitas storage penyimpanan sistem' },
-      { id: 5, kode: 'C5', nama: 'Kartu Grafis (GPU)', tipe: 'Benefit', rank: 5, bobot: 0, keterangan: 'Performa visual, gaming, dan 3D rendering' },
-      { id: 6, kode: 'C6', nama: 'Daya Baterai', tipe: 'Benefit', rank: 6, bobot: 0, keterangan: 'Kapasitas baterai laptop (Wh)' },
-      { id: 7, kode: 'C7', nama: 'Portabilitas (Berat)', tipe: 'Cost', rank: 7, bobot: 0, keterangan: 'Bobot fisik laptop (makin ringan makin baik)' },
-      { id: 8, kode: 'C8', nama: 'Kualitas Layar', tipe: 'Benefit', rank: 8, bobot: 0, keterangan: 'Skor kualitas panel, warna, dan refresh rate' }
-    ],
+    // Master 8 Kriteria Keputusan dengan data rank tersimpan
+    kriteriaList: getInitialKriteriaList(),
 
     laptopsData: [],
     hasilRanking: [],
@@ -147,52 +182,22 @@ function spkApp() {
     },
 
     async init() {
-      // 1. Muat pengaturan yang tersimpan di localStorage (Ranks & Filter)
-      this.loadSavedSettings();
-
-      // 2. Hitung bobot ROC awal
+      // 1. Hitung bobot ROC awal dari rank kriteria saat ini
       this.hitungBobotROC();
 
-      // 3. Ambil data dari Supabase
+      // 2. Ambil data dari Supabase / Local Storage
       await this.loadDataLaptops(false);
 
-      // 4. Kalkulasi TOPSIS otomatis jika ada data
+      // 3. Kalkulasi TOPSIS otomatis jika ada data
       if (this.laptopsData.length > 0) {
         this.kalkulasiTOPSIS(false);
-      }
-    },
-
-    // MEMUAT & MENYIMPAN PENGATURAN LOKAL (PERSISTENSI SETELAH REFRESH)
-    loadSavedSettings() {
-      // Muat Filter Terakhir
-      const savedFilter = localStorage.getItem('spk_filter_status');
-      if (savedFilter && ['all', 'ready', 'indent'].includes(savedFilter)) {
-        this.filterStatus = savedFilter;
-      }
-
-      // Muat Prioritas Rank ROC Terakhir
-      const savedRanks = localStorage.getItem('spk_criteria_ranks');
-      if (savedRanks) {
-        try {
-          const parsed = JSON.parse(savedRanks);
-          if (Array.isArray(parsed)) {
-            parsed.forEach(saved => {
-              const target = this.kriteriaList.find(k => k.id === saved.id || k.kode === saved.kode);
-              if (target && typeof saved.rank === 'number' && saved.rank >= 1 && saved.rank <= 8) {
-                target.rank = saved.rank;
-              }
-            });
-          }
-        } catch(e) {
-          console.warn("Gagal memuat setting prioritas tersimpan:", e);
-        }
       }
     },
 
     saveSettings() {
       try {
         localStorage.setItem('spk_filter_status', this.filterStatus);
-        const ranksToSave = this.kriteriaList.map(k => ({ id: k.id, kode: k.kode, rank: k.rank }));
+        const ranksToSave = this.kriteriaList.map(k => ({ id: k.id, kode: k.kode, rank: Number(k.rank) }));
         localStorage.setItem('spk_criteria_ranks', JSON.stringify(ranksToSave));
       } catch(e) {
         console.warn("Gagal menyimpan setting ke localStorage:", e);
@@ -256,6 +261,9 @@ function spkApp() {
 
     // Handler ketika pengguna mengubah rank pada dropdown kriteria
     onRankChange() {
+      this.kriteriaList.forEach(k => {
+        k.rank = Number(k.rank);
+      });
       this.hitungBobotROC();
       this.saveSettings();
       
@@ -275,13 +283,16 @@ function spkApp() {
     },
 
     resetPrioritas() {
-      this.kriteriaList.forEach((item, i) => item.rank = i + 1);
+      this.kriteriaList.forEach((item, i) => {
+        item.rank = i + 1;
+      });
+      this.kriteriaList = [...this.kriteriaList];
       try {
         localStorage.removeItem('spk_criteria_ranks');
       } catch(e) {}
       this.hitungBobotROC();
       this.saveSettings();
-      this.showToast("Prioritas kriteria dikembalikan ke pengaturan awal.", "info");
+      this.showToast("Prioritas kriteria dikembalikan ke pengaturan awal (Rank 1 - 8).", "info");
       
       if (this.laptopsData.length > 0) {
         this.kalkulasiTOPSIS(false);

@@ -278,9 +278,14 @@
               </div>
               <select x-model.number="item.rank" @change="onRankChange()" 
                       class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
-                <template x-for="n in 8" :key="n">
-                  <option :value="n" x-text="'Rank ' + n + (n === 1 ? ' (Paling Utama)' : (n === 8 ? ' (Terendah)' : ''))"></option>
-                </template>
+                <option value="1">Rank 1 (Paling Utama)</option>
+                <option value="2">Rank 2</option>
+                <option value="3">Rank 3</option>
+                <option value="4">Rank 4</option>
+                <option value="5">Rank 5</option>
+                <option value="6">Rank 6</option>
+                <option value="7">Rank 7</option>
+                <option value="8">Rank 8 (Terendah)</option>
               </select>
               
               <!-- Mini Weight Visual Bar -->

@@ -1,8 +1,8 @@
 /**
  * APP ENGINE - Toko Super Komputer
  * Logika Aplikasi SPK 10 Kriteria (C1 - C10):
- * - Multi-Source Live Online API Stock Fetcher (Menggabungkan Online Catalog Feed & Public REST API)
- * - Anti-Duplikasi Otomatis (Setiap Tarik Online Mengambil Batch Data Baru Berikutnya)
+ * - Database Koleksi 52 Model Laptop Paling Viral & Hits 2 Tahun Terakhir di Pasar Indonesia
+ * - Injeksi Demo Data Bertahap Cerdas (Non-Repeating Smart Batch Ingestion ke Supabase Cloud)
  * - Alpine.js Reactive Store
  * - Metode Pembobotan Rank Order Centroid (ROC) 10 Kriteria dengan Penanganan Tied-Rank
  * - Algoritma TOPSIS 10 Dimensi (Cost/Benefit Solusi Ideal A+/A-, Jarak Euclidean D+/D-, Skor Vi)
@@ -10,11 +10,907 @@
  * - UI Modal, Form Validation, dan Ekspor CSV
  */
 
-// ENDPOINTS MULTI-SOURCE FEED API STOK ONLINE (30+ Varian Laptop Lengkap)
-const ONLINE_FEED_ENDPOINTS = [
-  "https://raw.githubusercontent.com/bambangharmoko/pemilihanlaptop-super/main/data/laptops_catalog.json",
-  "./data/laptops_catalog.json",
-  "https://dummyjson.com/products/category/laptops"
+// 52 KOLEKSI DATASET LAPTOP PALING HITS & VIRAL DI INDONESIA (2024 - 2026)
+const LAPTOPS_MASTER_COLLECTION = [
+  // --- ASUS GAMING & ULTRABOOK ---
+  {
+    nama: "Asus ROG Zephyrus G14 OLED GA403",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Ultrabook Gaming",
+    harga: 25999000,
+    cpu_score: 95,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 90,
+    baterai_wh: 73,
+    berat_kg: 1.50,
+    layar_score: 98,
+    garansi_score: 4, // 2 Thn Resmi + 1 Thn Perfect Warranty
+    upgrade_score: 2, // RAM On-board + 1 Slot SSD
+    spesifikasi_ringkas: "Ryzen 9 8945HS / RTX 4070 8GB / 32GB LPDDR5X / 1TB SSD / 3K OLED 120Hz 0.2ms"
+  },
+  {
+    nama: "Asus ROG Zephyrus G16 GU605",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Pro Gaming / Studio",
+    harga: 35999000,
+    cpu_score: 98,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 95,
+    baterai_wh: 90,
+    berat_kg: 1.85,
+    layar_score: 99,
+    garansi_score: 4,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Intel Core Ultra 9 185H / RTX 4080 12GB / 32GB RAM / 2.5K 240Hz ROG Nebula OLED"
+  },
+  {
+    nama: "Asus ROG Strix G16 G614J",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Esports Gaming",
+    harga: 28499000,
+    cpu_score: 97,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 94,
+    baterai_wh: 90,
+    berat_kg: 2.50,
+    layar_score: 95,
+    garansi_score: 5,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i9-14900HX / RTX 4070 8GB 140W / ROG Nebula Display QHD 240Hz 3ms"
+  },
+  {
+    nama: "Asus TUF Gaming A15 FA507UV",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Heavy Gaming / 3D",
+    harga: 17499000,
+    cpu_score: 90,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 88,
+    baterai_wh: 90,
+    berat_kg: 2.20,
+    layar_score: 88,
+    garansi_score: 4,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Ryzen 7 8845HS / RTX 4060 8GB 140W / 90Wh Battery / FHD 144Hz 100% sRGB"
+  },
+  {
+    nama: "Asus TUF Gaming F15 FX507",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Gaming Entry",
+    harga: 14299000,
+    cpu_score: 86,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 85,
+    baterai_wh: 90,
+    berat_kg: 2.20,
+    layar_score: 85,
+    garansi_score: 4,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i7-13620H / RTX 4050 6GB 140W / 16GB DDR5 / 144Hz G-Sync"
+  },
+  {
+    nama: "Asus Vivobook S 14 OLED M5406",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Desain / Mahasiswa",
+    harga: 14299000,
+    cpu_score: 91,
+    ram_gb: 16,
+    ssd_gb: 1024,
+    gpu_score: 78,
+    baterai_wh: 75,
+    berat_kg: 1.30,
+    layar_score: 96,
+    garansi_score: 4,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Ryzen 7 8845HS / Radeon 780M / 16GB LPDDR5X / 3K 120Hz OLED 100% DCI-P3"
+  },
+  {
+    nama: "Asus Zenbook 14 OLED UX3405",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Premium Ultraportable",
+    harga: 20999000,
+    cpu_score: 93,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 76,
+    baterai_wh: 75,
+    berat_kg: 1.20,
+    layar_score: 98,
+    garansi_score: 4,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Intel Core Ultra 7 155H / 32GB LPDDR5X / 3K 120Hz Lumina OLED / 75Wh Battery"
+  },
+  {
+    nama: "Asus Zenbook DUO UX8406",
+    merek: "Asus",
+    status: "indent",
+    kategori_penggunaan: "Dual Screen Workstation",
+    harga: 33999000,
+    cpu_score: 97,
+    ram_gb: 32,
+    ssd_gb: 2048,
+    gpu_score: 78,
+    baterai_wh: 75,
+    berat_kg: 1.65,
+    layar_score: 99,
+    garansi_score: 4,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Dual 14-inch 3K OLED 120Hz Touchscreens / Intel Core Ultra 9 / 32GB / 2TB NVMe"
+  },
+  {
+    nama: "Asus Vivobook Go 14 E1404",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Budget / Mahasiswa",
+    harga: 5999000,
+    cpu_score: 68,
+    ram_gb: 8,
+    ssd_gb: 512,
+    gpu_score: 48,
+    baterai_wh: 42,
+    berat_kg: 1.38,
+    layar_score: 75,
+    garansi_score: 3,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Ryzen 3 7320U / 8GB LPDDR5 / 512GB NVMe / FHD Anti-Glare 180 Lay-Flat"
+  },
+  {
+    nama: "Asus Vivobook Pro 15 OLED N6506",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Content Creator",
+    harga: 22499000,
+    cpu_score: 92,
+    ram_gb: 16,
+    ssd_gb: 1024,
+    gpu_score: 89,
+    baterai_wh: 75,
+    berat_kg: 1.80,
+    layar_score: 97,
+    garansi_score: 4,
+    upgrade_score: 3,
+    spesifikasi_ringkas: "Intel Core Ultra 7 155H / RTX 4060 8GB / 3K 120Hz OLED / Asus DialPad"
+  },
+
+  // --- LENOVO GAMING & ULTRABOOK ---
+  {
+    nama: "Lenovo Legion Pro 5 16IRX9",
+    merek: "Lenovo",
+    status: "ready",
+    kategori_penggunaan: "Gaming / Creator",
+    harga: 26999000,
+    cpu_score: 96,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 92,
+    baterai_wh: 80,
+    berat_kg: 2.50,
+    layar_score: 94,
+    garansi_score: 5, // 3 Thn Resmi + 3 Thn ADP
+    upgrade_score: 5, // Dual SODIMM + Dual M.2
+    spesifikasi_ringkas: "Intel Core i7-14700HX / RTX 4070 8GB / 32GB DDR5 / 1TB SSD / WQXGA 240Hz 500nits"
+  },
+  {
+    nama: "Lenovo Legion 7i 16IRX9",
+    merek: "Lenovo",
+    status: "indent",
+    kategori_penggunaan: "Flagship Gaming",
+    harga: 39999000,
+    cpu_score: 99,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 96,
+    baterai_wh: 99.9,
+    berat_kg: 2.24,
+    layar_score: 98,
+    garansi_score: 5,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i9-14900HX / RTX 4080 12GB / 32GB DDR5 / 3.2K 165Hz 100% DCI-P3"
+  },
+  {
+    nama: "Lenovo Legion Slim 5 16AHP9",
+    merek: "Lenovo",
+    status: "ready",
+    kategori_penggunaan: "Gaming Slim",
+    harga: 20999000,
+    cpu_score: 91,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 89,
+    baterai_wh: 80,
+    berat_kg: 2.30,
+    layar_score: 92,
+    garansi_score: 5,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Ryzen 7 8845HS / RTX 4060 8GB / 16GB DDR5 / 165Hz WQXGA 100% sRGB"
+  },
+  {
+    nama: "Lenovo LOQ 15IAX9 Essential",
+    merek: "Lenovo",
+    status: "ready",
+    kategori_penggunaan: "Gaming Entry",
+    harga: 12999000,
+    cpu_score: 84,
+    ram_gb: 12,
+    ssd_gb: 512,
+    gpu_score: 82,
+    baterai_wh: 60,
+    berat_kg: 2.38,
+    layar_score: 85,
+    garansi_score: 4,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i5-12450HX / RTX 3050 6GB 95W / 12GB DDR5 / 100% sRGB 144Hz"
+  },
+  {
+    nama: "Lenovo LOQ 15AHP9",
+    merek: "Lenovo",
+    status: "ready",
+    kategori_penggunaan: "Gaming Mainstream",
+    harga: 16499000,
+    cpu_score: 90,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 88,
+    baterai_wh: 60,
+    berat_kg: 2.38,
+    layar_score: 88,
+    garansi_score: 4,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Ryzen 7 8845HS / RTX 4060 8GB 115W / 16GB DDR5 / 144Hz 100% sRGB G-Sync"
+  },
+  {
+    nama: "Lenovo Yoga Slim 7i Aura Edition",
+    merek: "Lenovo",
+    status: "indent",
+    kategori_penggunaan: "AI Ultrabook Next-Gen",
+    harga: 23999000,
+    cpu_score: 94,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 78,
+    baterai_wh: 70,
+    berat_kg: 1.46,
+    layar_score: 97,
+    garansi_score: 5,
+    upgrade_score: 1,
+    spesifikasi_ringkas: "Intel Core Ultra 7 258V Lunar Lake / 32GB LPDDR5X / 2.8K 120Hz OLED 100% DCI-P3"
+  },
+  {
+    nama: "Lenovo Yoga Pro 9i 16",
+    merek: "Lenovo",
+    status: "indent",
+    kategori_penggunaan: "Studio Creator Pro",
+    harga: 32999000,
+    cpu_score: 97,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 92,
+    baterai_wh: 84,
+    berat_kg: 2.18,
+    layar_score: 99,
+    garansi_score: 5,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Intel Core Ultra 9 185H / RTX 4070 / 32GB / Mini-LED 3.2K 165Hz 1200nits"
+  },
+  {
+    nama: "Lenovo Yoga Slim 7 Carbon 13",
+    merek: "Lenovo",
+    status: "ready",
+    kategori_penggunaan: "Carbon Featherlight",
+    harga: 16499000,
+    cpu_score: 87,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 66,
+    baterai_wh: 50,
+    berat_kg: 0.96,
+    layar_score: 94,
+    garansi_score: 5,
+    upgrade_score: 1,
+    spesifikasi_ringkas: "Ryzen 7 5800U / Carbon Fiber & Magnesium / 2.5K QHD+ 90Hz 100% sRGB / 960g"
+  },
+  {
+    nama: "Lenovo IdeaPad Slim 3 14IAH8",
+    merek: "Lenovo",
+    status: "ready",
+    kategori_penggunaan: "Office / Multitasking",
+    harga: 8299000,
+    cpu_score: 80,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 58,
+    baterai_wh: 47,
+    berat_kg: 1.37,
+    layar_score: 79,
+    garansi_score: 3,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Intel Core i5-12450H / 16GB LPDDR5 / 512GB NVMe / FHD IPS Display"
+  },
+  {
+    nama: "Lenovo ThinkPad E14 Gen 5",
+    merek: "Lenovo",
+    status: "ready",
+    kategori_penggunaan: "Business Durability",
+    harga: 13999000,
+    cpu_score: 85,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 65,
+    baterai_wh: 57,
+    berat_kg: 1.43,
+    layar_score: 86,
+    garansi_score: 4,
+    upgrade_score: 3,
+    spesifikasi_ringkas: "Ryzen 7 7730U / MIL-STD-810H Tested / TrackPoint / WUXGA 100% sRGB"
+  },
+
+  // --- APPLE MACBOOK SERIES ---
+  {
+    nama: "Apple MacBook Air M3 13-inch",
+    merek: "Apple",
+    status: "ready",
+    kategori_penggunaan: "Office / Mahasiswa",
+    harga: 17999000,
+    cpu_score: 90,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 76,
+    baterai_wh: 52.6,
+    berat_kg: 1.24,
+    layar_score: 93,
+    garansi_score: 2,
+    upgrade_score: 1,
+    spesifikasi_ringkas: "Apple M3 8-core CPU / 10-core GPU / Liquid Retina Display / Fanless Silent"
+  },
+  {
+    nama: "Apple MacBook Air M3 15-inch",
+    merek: "Apple",
+    status: "ready",
+    kategori_penggunaan: "Produktivitas Luas",
+    harga: 21999000,
+    cpu_score: 90,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 76,
+    baterai_wh: 66.5,
+    berat_kg: 1.51,
+    layar_score: 94,
+    garansi_score: 2,
+    upgrade_score: 1,
+    spesifikasi_ringkas: "Apple M3 8-core / 10-core GPU / 15.3-inch Liquid Retina 500 nits / 6-Speaker"
+  },
+  {
+    nama: "Apple MacBook Pro 14 M3 Pro",
+    merek: "Apple",
+    status: "ready",
+    kategori_penggunaan: "Pro Creator / Studio",
+    harga: 31999000,
+    cpu_score: 96,
+    ram_gb: 18,
+    ssd_gb: 512,
+    gpu_score: 92,
+    baterai_wh: 70,
+    berat_kg: 1.61,
+    layar_score: 99,
+    garansi_score: 2,
+    upgrade_score: 1,
+    spesifikasi_ringkas: "Apple M3 Pro 11-core / 14-core GPU / Liquid Retina XDR 120Hz ProMotion"
+  },
+  {
+    nama: "Apple MacBook Pro 16 M3 Max",
+    merek: "Apple",
+    status: "indent",
+    kategori_penggunaan: "Ultimate Workstation",
+    harga: 59999000,
+    cpu_score: 99,
+    ram_gb: 48,
+    ssd_gb: 1024,
+    gpu_score: 98,
+    baterai_wh: 99.6,
+    berat_kg: 2.16,
+    layar_score: 99,
+    garansi_score: 2,
+    upgrade_score: 1,
+    spesifikasi_ringkas: "Apple M3 Max 16-core / 40-core GPU / 48GB Unified / 16.2 Liquid Retina XDR"
+  },
+  {
+    nama: "Apple MacBook Air M2 13-inch",
+    merek: "Apple",
+    status: "ready",
+    kategori_penggunaan: "Budget iOS Ecosystem",
+    harga: 14999000,
+    cpu_score: 86,
+    ram_gb: 8,
+    ssd_gb: 256,
+    gpu_score: 72,
+    baterai_wh: 52.6,
+    berat_kg: 1.24,
+    layar_score: 92,
+    garansi_score: 2,
+    upgrade_score: 1,
+    spesifikasi_ringkas: "Apple M2 8-core CPU / 8-core GPU / Midnight Blue / MagSafe 3 Charging"
+  },
+
+  // --- ACER PREDATOR & SWIFT ---
+  {
+    nama: "Acer Predator Helios Neo 16 PHN16",
+    merek: "Acer",
+    status: "ready",
+    kategori_penggunaan: "High-End Gaming",
+    harga: 22999000,
+    cpu_score: 94,
+    ram_gb: 16,
+    ssd_gb: 1024,
+    gpu_score: 90,
+    baterai_wh: 90,
+    berat_kg: 2.60,
+    layar_score: 94,
+    garansi_score: 5,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i7-14650HX / RTX 4060 8GB / Liquid Metal Cooling / WQXGA 165Hz 500nits"
+  },
+  {
+    nama: "Acer Predator Helios 18 PH18",
+    merek: "Acer",
+    status: "indent",
+    kategori_penggunaan: "Desktop Replacement",
+    harga: 44999000,
+    cpu_score: 99,
+    ram_gb: 32,
+    ssd_gb: 2048,
+    gpu_score: 97,
+    baterai_wh: 90,
+    berat_kg: 3.25,
+    layar_score: 98,
+    garansi_score: 5,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i9-14900HX / RTX 4080 12GB / Mini-LED 18-inch 250Hz WQXGA"
+  },
+  {
+    nama: "Acer Nitro V 15 ANV15",
+    merek: "Acer",
+    status: "ready",
+    kategori_penggunaan: "Gaming Budget Populer",
+    harga: 12499000,
+    cpu_score: 83,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 84,
+    baterai_wh: 57,
+    berat_kg: 2.10,
+    layar_score: 82,
+    garansi_score: 4,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i5-13420H / RTX 4050 6GB / 16GB DDR5 / 144Hz FHD IPS"
+  },
+  {
+    nama: "Acer Nitro V 16 ANV16",
+    merek: "Acer",
+    status: "ready",
+    kategori_penggunaan: "Gaming 16-Inch",
+    harga: 16999000,
+    cpu_score: 90,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 88,
+    baterai_wh: 57,
+    berat_kg: 2.45,
+    layar_score: 88,
+    garansi_score: 4,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Ryzen 7 8845HS / RTX 4060 8GB / 16GB DDR5 / WUXGA 16:10 165Hz 100% sRGB"
+  },
+  {
+    nama: "Acer Swift Go 14 OLED EVO SFG14",
+    merek: "Acer",
+    status: "ready",
+    kategori_penggunaan: "Bisnis / Multitasking",
+    harga: 13499000,
+    cpu_score: 88,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 74,
+    baterai_wh: 65,
+    berat_kg: 1.32,
+    layar_score: 95,
+    garansi_score: 3,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Intel Core Ultra 7 155H / Intel Arc / 16GB LPDDR5X / 2.8K 90Hz OLED 100% DCI-P3"
+  },
+  {
+    nama: "Acer Aspire 5 Slim A514-56",
+    merek: "Acer",
+    status: "ready",
+    kategori_penggunaan: "Mahasiswa / Multitasking",
+    harga: 8799000,
+    cpu_score: 77,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 60,
+    baterai_wh: 50,
+    berat_kg: 1.48,
+    layar_score: 80,
+    garansi_score: 3,
+    upgrade_score: 4,
+    spesifikasi_ringkas: "Intel Core i5-1335U / 16GB DDR4 / 512GB NVMe / Thunderbolt 4 Support"
+  },
+
+  // --- HP OMEN, VICTUS & PAVILION ---
+  {
+    nama: "HP OMEN Transcend 14",
+    merek: "HP",
+    status: "ready",
+    kategori_penggunaan: "Slim OLED Gaming",
+    harga: 25499000,
+    cpu_score: 93,
+    ram_gb: 16,
+    ssd_gb: 1024,
+    gpu_score: 89,
+    baterai_wh: 71,
+    berat_kg: 1.63,
+    layar_score: 98,
+    garansi_score: 4,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Intel Core Ultra 7 155H / RTX 4060 8GB / 2.8K 120Hz OLED 0.2ms / RGB HyperX"
+  },
+  {
+    nama: "HP OMEN 16-wf1000",
+    merek: "HP",
+    status: "ready",
+    kategori_penggunaan: "Heavy Duty Gaming",
+    harga: 27999000,
+    cpu_score: 96,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 92,
+    baterai_wh: 83,
+    berat_kg: 2.39,
+    layar_score: 94,
+    garansi_score: 4,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i7-14700HX / RTX 4070 8GB / 32GB DDR5 / QHD 240Hz 3ms 100% sRGB"
+  },
+  {
+    nama: "HP Victus 15-fb1000",
+    merek: "HP",
+    status: "ready",
+    kategori_penggunaan: "Gaming Entry Budget",
+    harga: 10999000,
+    cpu_score: 78,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 75,
+    baterai_wh: 52.5,
+    berat_kg: 2.29,
+    layar_score: 80,
+    garansi_score: 3,
+    upgrade_score: 4,
+    spesifikasi_ringkas: "Ryzen 5 7535HS / RTX 2050 4GB / 16GB DDR5 / FHD IPS 144Hz"
+  },
+  {
+    nama: "HP Victus 16-r1000",
+    merek: "HP",
+    status: "ready",
+    kategori_penggunaan: "Mid-Range Gaming",
+    harga: 18999000,
+    cpu_score: 92,
+    ram_gb: 16,
+    ssd_gb: 1024,
+    gpu_score: 89,
+    baterai_wh: 70,
+    berat_kg: 2.33,
+    layar_score: 88,
+    garansi_score: 4,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i7-14700HX / RTX 4060 8GB / 16GB DDR5 / 165Hz 100% sRGB"
+  },
+  {
+    nama: "HP Pavilion Aero 13-be2000",
+    merek: "HP",
+    status: "ready",
+    kategori_penggunaan: "Mobilitas Tinggi",
+    harga: 11999000,
+    cpu_score: 83,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 60,
+    baterai_wh: 43,
+    berat_kg: 0.97,
+    layar_score: 86,
+    garansi_score: 3,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Ryzen 5 7535U / Radeon 660M / Super Ringan 970g Magnesium Chassis"
+  },
+  {
+    nama: "HP Envy x360 14-fa0000",
+    merek: "HP",
+    status: "ready",
+    kategori_penggunaan: "Convertible / Desain",
+    harga: 16999000,
+    cpu_score: 88,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 72,
+    baterai_wh: 59,
+    berat_kg: 1.39,
+    layar_score: 96,
+    garansi_score: 4,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Ryzen 7 8840HS / 2.8K OLED Touchscreen / Stylus Pen Included / 360 Hinge"
+  },
+
+  // --- MSI TITAN, STEALTH & KATANA ---
+  {
+    nama: "MSI Titan 18 HX A14V",
+    merek: "MSI",
+    status: "indent",
+    kategori_penggunaan: "Extreme Enthusiast",
+    harga: 89999000,
+    cpu_score: 99,
+    ram_gb: 64,
+    ssd_gb: 2048,
+    gpu_score: 99,
+    baterai_wh: 99.9,
+    berat_kg: 3.60,
+    layar_score: 99,
+    garansi_score: 5,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i9-14900HX / RTX 4090 16GB 175W / 64GB DDR5 / 18-inch 4K 120Hz Mini-LED"
+  },
+  {
+    nama: "MSI Stealth 16 AI Studio A1V",
+    merek: "MSI",
+    status: "ready",
+    kategori_penggunaan: "Creator Gaming Slim",
+    harga: 32999000,
+    cpu_score: 97,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 92,
+    baterai_wh: 99.9,
+    berat_kg: 1.99,
+    layar_score: 98,
+    garansi_score: 4,
+    upgrade_score: 4,
+    spesifikasi_ringkas: "Intel Core Ultra 9 185H / RTX 4070 8GB / Magnesium-Aluminum / QHD+ 240Hz OLED"
+  },
+  {
+    nama: "MSI Katana 15 B13VFK",
+    merek: "MSI",
+    status: "ready",
+    kategori_penggunaan: "Gaming Performance",
+    harga: 16899000,
+    cpu_score: 88,
+    ram_gb: 16,
+    ssd_gb: 1024,
+    gpu_score: 89,
+    baterai_wh: 53.5,
+    berat_kg: 2.25,
+    layar_score: 84,
+    garansi_score: 3,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i7-13620H / RTX 4060 8GB / 16GB DDR5 / 1TB SSD / 144Hz FHD IPS"
+  },
+  {
+    nama: "MSI Cyborg 15 A13VEK",
+    merek: "MSI",
+    status: "ready",
+    kategori_penggunaan: "Gaming Cyberpunk",
+    harga: 14899000,
+    cpu_score: 86,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 85,
+    baterai_wh: 53.5,
+    berat_kg: 1.98,
+    layar_score: 82,
+    garansi_score: 3,
+    upgrade_score: 4,
+    spesifikasi_ringkas: "Intel Core i7-13620H / RTX 4050 6GB / 16GB DDR5 / Translucent Cyberpunk Chassis"
+  },
+  {
+    nama: "MSI Modern 14 C12M",
+    merek: "MSI",
+    status: "ready",
+    kategori_penggunaan: "Mahasiswa / Casual",
+    harga: 7499000,
+    cpu_score: 75,
+    ram_gb: 8,
+    ssd_gb: 512,
+    gpu_score: 54,
+    baterai_wh: 39.3,
+    berat_kg: 1.40,
+    layar_score: 78,
+    garansi_score: 3,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Intel Core i3-1215U / 8GB DDR4 / 512GB NVMe / Ultra-Light 1.4Kg Flip-n-Share"
+  },
+
+  // --- DELL & ALIENWARE ---
+  {
+    nama: "Dell XPS 14 9440",
+    merek: "Dell",
+    status: "indent",
+    kategori_penggunaan: "Executive Luxury",
+    harga: 36999000,
+    cpu_score: 94,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 82,
+    baterai_wh: 69.5,
+    berat_kg: 1.68,
+    layar_score: 98,
+    garansi_score: 4,
+    upgrade_score: 1,
+    spesifikasi_ringkas: "Intel Core Ultra 7 155H / RTX 4050 / 32GB LPDDR5X / 3.2K OLED Touchscreen"
+  },
+  {
+    nama: "Dell G15 5530 Gaming",
+    merek: "Dell",
+    status: "ready",
+    kategori_penggunaan: "Gaming Heavy Duty",
+    harga: 19499000,
+    cpu_score: 91,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 89,
+    baterai_wh: 86,
+    berat_kg: 2.81,
+    layar_score: 87,
+    garansi_score: 4,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i7-13650HX / RTX 4060 8GB 140W / 16GB DDR5 / FHD 165Hz sRGB"
+  },
+  {
+    nama: "Dell Inspiron 14 5440",
+    merek: "Dell",
+    status: "ready",
+    kategori_penggunaan: "Office / Profesional",
+    harga: 12499000,
+    cpu_score: 82,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 62,
+    baterai_wh: 54,
+    berat_kg: 1.54,
+    layar_score: 84,
+    garansi_score: 3,
+    upgrade_score: 3,
+    spesifikasi_ringkas: "Intel Core 5 120U / Intel Graphics / 16GB DDR5 / 16:10 FHD+ ComfortView"
+  },
+
+  // --- BRAND LOKAL VIRAL (ADVAN & AXIOO) ---
+  {
+    nama: "Advan Workplus AMD Edition",
+    merek: "Advan",
+    status: "ready",
+    kategori_penggunaan: "Budget Produktivitas",
+    harga: 6899000,
+    cpu_score: 78,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 68,
+    baterai_wh: 58,
+    berat_kg: 1.40,
+    layar_score: 82,
+    garansi_score: 2,
+    upgrade_score: 3,
+    spesifikasi_ringkas: "Ryzen 5 6600H / Radeon 660M / 16GB LPDDR5 / Dual M.2 SSD Slot Metal Body"
+  },
+  {
+    nama: "Advan PixelWar Gaming",
+    merek: "Advan",
+    status: "ready",
+    kategori_penggunaan: "Gaming Budget Lokal",
+    harga: 9499000,
+    cpu_score: 80,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 74,
+    baterai_wh: 65,
+    berat_kg: 1.95,
+    layar_score: 89,
+    garansi_score: 2,
+    upgrade_score: 4,
+    spesifikasi_ringkas: "Ryzen 5 6600H / Radeon RX 6500M 4GB / 2.5K 120Hz 100% sRGB Display"
+  },
+  {
+    nama: "Advan 360 Stylus 2-in-1",
+    merek: "Advan",
+    status: "ready",
+    kategori_penggunaan: "Budget Convertible",
+    harga: 5999000,
+    cpu_score: 72,
+    ram_gb: 8,
+    ssd_gb: 256,
+    gpu_score: 50,
+    baterai_wh: 51,
+    berat_kg: 1.50,
+    layar_score: 82,
+    garansi_score: 2,
+    upgrade_score: 3,
+    spesifikasi_ringkas: "Intel Core i3-1115G4 / FHD Touchscreen 360 / Metal Chassis / Stylus Active Support"
+  },
+  {
+    nama: "Axioo Pongo 760 V2",
+    merek: "Axioo",
+    status: "ready",
+    kategori_penggunaan: "Gaming Lokal Powerhouse",
+    harga: 15499000,
+    cpu_score: 89,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 89,
+    baterai_wh: 54,
+    berat_kg: 2.15,
+    layar_score: 88,
+    garansi_score: 4,
+    upgrade_score: 5,
+    spesifikasi_ringkas: "Intel Core i7-13620H / RTX 4060 8GB 140W / 16GB DDR5 / 144Hz 100% sRGB"
+  },
+  {
+    nama: "Axioo Hype 5 AMD Edition",
+    merek: "Axioo",
+    status: "ready",
+    kategori_penggunaan: "Budget / Mahasiswa",
+    harga: 5299000,
+    cpu_score: 70,
+    ram_gb: 8,
+    ssd_gb: 256,
+    gpu_score: 52,
+    baterai_wh: 45,
+    berat_kg: 1.42,
+    layar_score: 76,
+    garansi_score: 2,
+    upgrade_score: 3,
+    spesifikasi_ringkas: "Ryzen 5 5500U / 8GB Upgradable / 256GB NVMe / FHD IPS Display"
+  },
+  {
+    nama: "Axioo Hype 7 AMD Edition",
+    merek: "Axioo",
+    status: "ready",
+    kategori_penggunaan: "Multitasking Terjangkau",
+    harga: 6999000,
+    cpu_score: 78,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 60,
+    baterai_wh: 45,
+    berat_kg: 1.42,
+    layar_score: 78,
+    garansi_score: 2,
+    upgrade_score: 4,
+    spesifikasi_ringkas: "Ryzen 7 5700U 8-Core / 16GB DDR4 / 512GB NVMe / Backlit Keyboard"
+  },
+  {
+    nama: "Huawei MateBook D 14 2024",
+    merek: "Huawei",
+    status: "ready",
+    kategori_penggunaan: "Office / Mobile",
+    harga: 9999000,
+    cpu_score: 80,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 64,
+    baterai_wh: 56,
+    berat_kg: 1.39,
+    layar_score: 84,
+    garansi_score: 3,
+    upgrade_score: 2,
+    spesifikasi_ringkas: "Intel Core i5-1240P / 16GB LPDDR4X / 16:10 FullView Display / Metaline Antenna"
+  }
 ];
 
 // Helper Definisi 10 Master Kriteria
@@ -67,7 +963,7 @@ function spkApp() {
   return {
     dbStatus: 'checking', // 'online' | 'table_missing' | 'checking'
     isLoading: false,
-    isFetchingOnline: false,
+    isInjectingDemo: false,
     modalInput: false,
     modalMatriks: false,
     modalSql: false,
@@ -390,101 +1286,44 @@ function spkApp() {
       }
     },
 
-    // 6. FITUR PENARIKAN DATA LIVE ONLINE API (30+ Varian Stok Tanpa Duplikasi)
+    // 6. FITUR INJEKSI DEMO DATA LAPTOP VIRAL (52 MODEL KOLEKSI RESMI DENGAN ANTI-DUPLIKASI)
     async seedDataContoh() {
-      this.isFetchingOnline = true;
-      this.showToast("🌐 Menghubungi API feed stok laptop online...", "info");
+      this.isInjectingDemo = true;
 
-      let allOnlineLaptops = [];
-
-      // 1. Fetch dari feed katalog laptop online
-      for (const endpoint of ONLINE_FEED_ENDPOINTS) {
-        try {
-          const response = await fetch(endpoint, { cache: "no-store" });
-          if (response.ok) {
-            const data = await response.json();
-            if (Array.isArray(data)) {
-              allOnlineLaptops.push(...data);
-            } else if (data && Array.isArray(data.products)) {
-              // Map DummyJSON jika response berbentuk products
-              const mapped = data.products.map(p => {
-                const usdPrice = Number(p.price) || 999;
-                return {
-                  nama: p.title || 'Laptop',
-                  merek: p.brand || 'Universal',
-                  status: (p.stock && p.stock > 10) ? 'ready' : 'indent',
-                  kategori_penggunaan: usdPrice > 1600 ? 'Gaming / Pro Creator' : 'Bisnis / Multitasking',
-                  harga: Math.round((usdPrice * 16200) / 100000) * 100000 + 99000,
-                  cpu_score: Math.min(98, Math.max(65, Math.round(65 + (usdPrice / 2500) * 30))),
-                  ram_gb: usdPrice > 1800 ? 32 : 16,
-                  ssd_gb: usdPrice > 1500 ? 1024 : 512,
-                  gpu_score: Math.min(95, Math.max(50, Math.round(50 + (usdPrice / 2500) * 40))),
-                  baterai_wh: Math.min(99, Math.max(40, Math.round(42 + (usdPrice / 2500) * 45))),
-                  berat_kg: +(1.2 + (p.id % 5) * 0.25).toFixed(2),
-                  layar_score: Math.min(99, Math.max(75, Math.round(75 + (p.rating || 4.5) * 4.6))),
-                  garansi_score: usdPrice > 1600 ? 4 : 3,
-                  upgrade_score: p.brand?.toLowerCase().includes('apple') ? 1 : 3,
-                  spesifikasi_ringkas: p.description || ''
-                };
-              });
-              allOnlineLaptops.push(...mapped);
-            }
-          }
-        } catch (fetchErr) {
-          console.warn(`Gagal fetch dari ${endpoint}:`, fetchErr);
-        }
-      }
-
-      if (allOnlineLaptops.length === 0) {
-        this.isFetchingOnline = false;
-        this.showToast("❌ Gagal menghubungi API online. Periksa koneksi internet Anda.", "error");
-        return;
-      }
-
-      // 2. Filter data unik berdasarkan nama
-      const uniqueFeedMap = new Map();
-      allOnlineLaptops.forEach(item => {
-        const key = (item.nama || '').toLowerCase().trim();
-        if (key && !uniqueFeedMap.has(key)) {
-          uniqueFeedMap.set(key, item);
-        }
-      });
-      const uniqueOnlineLaptops = Array.from(uniqueFeedMap.values());
-
-      // 3. Dapatkan daftar nama laptop yang sudah ada di database saat ini
+      // 1. Dapatkan daftar nama laptop yang sudah ada di database saat ini (case-insensitive)
       const existingNames = new Set(this.laptopsData.map(l => (l.nama || '').toLowerCase().trim()));
 
-      // 4. Filter laptop dari online API yang BELUM PERNAH dimasukkan
-      const availableUnadded = uniqueOnlineLaptops.filter(
+      // 2. Filter dari 52 model laptop yang BELUM PERNAH dimasukkan
+      const availableUnadded = LAPTOPS_MASTER_COLLECTION.filter(
         item => !existingNames.has(item.nama.toLowerCase().trim())
       );
 
-      // 5. Jika semua model dari API online sudah dimasukkan
+      // 3. Jika semua 52 model laptop sudah ada di database
       if (availableUnadded.length === 0) {
-        this.isFetchingOnline = false;
-        this.showToast(`ℹ️ Seluruh ${uniqueOnlineLaptops.length} model laptop dari feed API online telah ada di database Anda!`, "info");
+        this.isInjectingDemo = false;
+        this.showToast(`ℹ️ Seluruh ${LAPTOPS_MASTER_COLLECTION.length} model laptop viral (2 tahun terakhir) telah ada di database Anda!`, "info");
         return;
       }
 
-      // 6. Ambil batch 3 laptop baru berikutnya
-      const BATCH_SIZE = 3;
+      // 4. Ambil batch 4 laptop baru berikutnya setiap kali tombol ditekan
+      const BATCH_SIZE = 4;
       const nextBatch = availableUnadded.slice(0, BATCH_SIZE);
       const remainingAfterThis = availableUnadded.length - nextBatch.length;
 
       const batchNames = nextBatch.map(b => b.nama).join(', ');
       if (this.laptopsData.length > 0) {
-        const confirmed = confirm(`Ditemukan ${availableUnadded.length} stok laptop baru di API online.\n\nApakah Anda ingin menarik ${nextBatch.length} model berikutnya ke database?\n\n• ${nextBatch.map(b => b.nama + ' (Rp ' + Number(b.harga).toLocaleString('id-ID') + ')').join('\n• ')}`);
+        const confirmed = confirm(`Tersedia ${availableUnadded.length} varian laptop viral baru.\n\nApakah Anda ingin menambahkan ${nextBatch.length} model baru berikut ke database?\n\n• ${nextBatch.map(b => b.nama + ' (Rp ' + Number(b.harga).toLocaleString('id-ID') + ')').join('\n• ')}`);
         if (!confirmed) {
-          this.isFetchingOnline = false;
+          this.isInjectingDemo = false;
           return;
         }
       }
 
-      // 7. Simpan data baru yang ditarik dari online ke Supabase Cloud
+      // 5. Simpan ke Supabase Cloud (Bulk Insert)
       const res = await window.SupabaseService.seedLaptops(nextBatch);
       if (res && !res.error) {
         this.dbStatus = 'online';
-        this.showToast(`✅ Berhasil menarik ${nextBatch.length} laptop online: ${batchNames}. (Tersisa ${remainingAfterThis} model baru di feed API)`, "success");
+        this.showToast(`✅ Berhasil menambahkan ${nextBatch.length} laptop baru: ${batchNames}. (Tersisa ${remainingAfterThis} model di koleksi)`, "success");
         await this.loadDataLaptops(false);
       } else {
         if (res?.isTableMissing) {
@@ -495,10 +1334,10 @@ function spkApp() {
           this.laptopsData.push({ id: Date.now() + Math.floor(Math.random()*10000), ...item });
         }
         localStorage.setItem('spk_laptops_backup_10', JSON.stringify(this.laptopsData));
-        this.showToast(`✅ Berhasil menarik ${nextBatch.length} laptop dari online ke cache: ${batchNames}.`, "info");
+        this.showToast(`✅ ${nextBatch.length} laptop baru dimuat ke database: ${batchNames}.`, "info");
       }
 
-      this.isFetchingOnline = false;
+      this.isInjectingDemo = false;
     },
 
     // 7. KOMPUTASI ALGORITMA TOPSIS 10 DIMENSI (C1 - C10)

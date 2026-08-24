@@ -858,7 +858,7 @@ function spkLopcowApp() {
       try {
         let catalog = DEFAULT_LAPTOPS_DATA;
         try {
-          const resp = await fetch('data/laptops_catalog.json');
+          const resp = await fetch('../data/laptops_catalog.json');
           if (resp.ok) {
             catalog = await resp.json();
           }

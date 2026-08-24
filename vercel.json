@@ -2,9 +2,9 @@
   "version": 2,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/roc", "destination": "/roc.html" },
-    { "source": "/entropy", "destination": "/entropy.html" },
-    { "source": "/lopcow", "destination": "/lopcow.html" }
+    { "source": "/roc", "destination": "/roc/index.html" },
+    { "source": "/entropy", "destination": "/entropy/index.html" },
+    { "source": "/lopcow", "destination": "/lopcow/index.html" }
   ],
   "headers": [
     {

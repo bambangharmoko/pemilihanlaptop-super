@@ -13,18 +13,22 @@
 * **Database Cloud:** PostgreSQL via **Supabase Cloud** (Real-time CRUD & Persistensi Multi-Device)
 * **Deployment & Hosting:** **Vercel Web Platform** (`https://pemilihanlaptop-superkomputer.vercel.app`)
 * **Repository GitHub:** `https://github.com/bambangharmoko/pemilihanlaptop-super.git`
-* **Arsitektur Front-End:** Modular Static Web App (`index.html`, `roc.html`, `entropy.html`, `lopcow.html`, `style.css`, `supabase.js`, `app.js`, `app_entropy.js`, `app_lopcow.js`)
+* **Arsitektur Front-End:** Modular Directory Architecture:
+  - Root Portal: [`index.html`](file:///c:/beng/PemilihanLaptop/index.html), [`style.css`](file:///c:/beng/PemilihanLaptop/style.css), [`supabase.js`](file:///c:/beng/PemilihanLaptop/supabase.js)
+  - Modul ROC: [`roc/index.html`](file:///c:/beng/PemilihanLaptop/roc/index.html), [`roc/app.js`](file:///c:/beng/PemilihanLaptop/roc/app.js)
+  - Modul Entropy: [`entropy/index.html`](file:///c:/beng/PemilihanLaptop/entropy/index.html), [`entropy/app.js`](file:///c:/beng/PemilihanLaptop/entropy/app.js)
+  - Modul LOPCOW: [`lopcow/index.html`](file:///c:/beng/PemilihanLaptop/lopcow/index.html), [`lopcow/app.js`](file:///c:/beng/PemilihanLaptop/lopcow/app.js)
 
 ---
 
-## 2. Struktur Rute Halaman Web (Vercel Routing)
+## 2. Struktur Direktori & Rute Halaman Web (Vercel Routing)
 
-| URL Endpoint | File HTML | Modul JS | Deskripsi Halaman |
+| URL Endpoint | Direktori & File | Modul Logika | Deskripsi Halaman |
 | :--- | :--- | :--- | :--- |
-| `/` | `index.html` | - | **Gateway Portal / Landing Page:** Pemilihan metode pembobotan SPK & komparasi teori. |
-| `/roc` | `roc.html` | `app.js` | **SPK ROC + TOPSIS:** Pembobotan subjektif rank 1-10 dengan preset kebutuhan customer & cetak lembar konsultasi. |
-| `/entropy` | `entropy.html` | `app_entropy.js` | **SPK Shannon Entropy + TOPSIS:** Pembobotan objektif dispersi informasi data. |
-| `/lopcow` | `lopcow.html` | `app_lopcow.js` | **SPK LOPCOW + TOPSIS:** Pembobotan objektif perubahan persentase kuadrat logaritmik. |
+| **`/`** | `index.html` | - | **Gateway Portal / Hub Utama:** Halaman muka pemilihan metode pembobotan SPK & komparasi teori. |
+| **`/roc`** | `roc/index.html` | `roc/app.js` | **SPK ROC + TOPSIS:** Pembobotan subjektif rank 1-10 dengan preset kebutuhan customer & cetak lembar rekomendasi resmi. |
+| **`/entropy`** | `entropy/index.html` | `entropy/app.js` | **SPK Shannon Entropy + TOPSIS:** Pembobotan objektif dispersi informasi data tanpa bias subjektif. |
+| **`/lopcow`** | `lopcow/index.html` | `lopcow/app.js` | **SPK LOPCOW + TOPSIS:** Pembobotan objektif modern deviasi persentase kuadrat logaritmik ($LP_{ij}, V_j$). |
 
 ---
 

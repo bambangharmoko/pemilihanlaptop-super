@@ -1,15 +1,23 @@
 /**
  * APP ENGINE - Toko Super Komputer
- * Logika Aplikasi SPK 10 Kriteria (C1 - C10):
- * - Koleksi 52 Model Laptop Hits & Viral di Indonesia (2024 - 2026)
- * - Injeksi Demo Stock Laptop Bertahap (Kelipatan 5 Model per Klik dengan Anti-Duplikasi)
- * - Multi-Select Checkbox & Fitur Hapus Massal (Bulk Delete) Cepat
- * - Custom Modal Alert / Konfirmasi Cantik (Menggantikan confirm browser standar)
- * - Alpine.js Reactive Store
- * - Metode Pembobotan Rank Order Centroid (ROC) 10 Kriteria dengan Penanganan Tied-Rank
- * - Algoritma TOPSIS 10 Dimensi (Cost/Benefit Solusi Ideal A+/A-, Jarak Euclidean D+/D-, Skor Vi)
- * - Persistensi Pengaturan Lokal (Ranks & Filter)
- * - UI Modal, Form Validation, dan Ekspor CSV
+ * Sistem Pendukung Keputusan (SPK) Pemilihan Laptop pada Customer Toko Super Komputer
+ * Berbasis Web Menggunakan Kombinasi Metode Rank Order Centroid (ROC) & TOPSIS (10 Kriteria)
+ * 
+ * Implementasi Metodologi:
+ * 1. Metode ROC (Rank Order Centroid) untuk Pembobotan Objektif Prioritas 10 Kriteria:
+ *    w_i = (1/m) * SUM_{k=i}^m (1/k) dengan penanganan tied-rank (harmonic weight averaging).
+ * 2. Metode TOPSIS (Technique for Order Preference by Similarity to Ideal Solution):
+ *    - Matriks Keputusan X (n x m)
+ *    - Matriks Ternormalisasi R (Vector Euclidean Normalization: r_ij = x_ij / sqrt(SUM x_kj^2))
+ *    - Matriks Ternormalisasi Terbobot Y (y_ij = w_j * r_ij)
+ *    - Solusi Ideal Positif (A+) & Solusi Ideal Negatif (A-) untuk Kriteria Benefit vs Cost
+ *    - Jarak Separasi Euclidean Positif (D+) & Negatif (D-)
+ *    - Nilai Preferensi / Kedekatan Relatif (Vi = D- / (D+ + D-))
+ * 3. Fitur Konsultasi Customer Toko Super Komputer:
+ *    - Preset Profil Kebutuhan Konsumen (Mahasiswa, Gaming, Content Creator, Bisnis, Upgradability)
+ *    - Saringan Filter Budget Maksimal & Kategori Penggunaan
+ *    - Cetak Lembar Hasil Rekomendasi Konsultasi Resmi (Print/PDF)
+ *    - Transparansi Matematis Lengkap (Vektor Pembagi, Matriks R, Matriks Y, A+, A-, D+, D-, Vi)
  */
 
 // 52 KOLEKSI DATASET LAPTOP PALING HITS & VIRAL DI INDONESIA (2024 - 2026)
@@ -915,16 +923,16 @@ const LAPTOPS_MASTER_COLLECTION = [
   }
 ];
 
-// Helper Definisi 10 Master Kriteria
+// Helper Definisi 10 Master Kriteria (C1 s/d C10)
 function getInitialKriteriaList() {
   const masterKriteria = [
-    { id: 1, kode: 'C1', nama: 'Harga Beli', tipe: 'Cost', satuan: 'Rupiah (Rp)', rank: 1, bobot: 0, keterangan: 'Nominal harga beli toko (makin hemat makin prioritas)' },
+    { id: 1, kode: 'C1', nama: 'Harga Beli', tipe: 'Cost', satuan: 'Rupiah (Rp)', rank: 1, bobot: 0, keterangan: 'Nominal harga beli toko (makin hemat makin diprioritaskan)' },
     { id: 2, kode: 'C2', nama: 'Processor (CPU)', tipe: 'Benefit', satuan: 'Skor 0-100', rank: 2, bobot: 0, keterangan: 'Performa komputasi inti prosesor benchmark' },
     { id: 3, kode: 'C3', nama: 'Kapasitas RAM', tipe: 'Benefit', satuan: 'Gigabyte (GB)', rank: 3, bobot: 0, keterangan: 'Memori multitasking dan rendering aplikasi' },
     { id: 4, kode: 'C4', nama: 'Kapasitas SSD', tipe: 'Benefit', satuan: 'Gigabyte (GB)', rank: 4, bobot: 0, keterangan: 'Kapasitas storage penyimpanan sistem & data' },
     { id: 5, kode: 'C5', nama: 'Kartu Grafis (GPU)', tipe: 'Benefit', satuan: 'Skor 0-100', rank: 5, bobot: 0, keterangan: 'Performa visual grafis, gaming, dan 3D rendering' },
     { id: 6, kode: 'C6', nama: 'Daya Baterai', tipe: 'Benefit', satuan: 'Watt-Hour (Wh)', rank: 6, bobot: 0, keterangan: 'Kapasitas baterai durasi operasional tanpa colokan' },
-    { id: 7, kode: 'C7', nama: 'Portabilitas (Berat)', tipe: 'Cost', satuan: 'Kilogram (Kg)', rank: 7, bobot: 0, keterangan: 'Bobot fisik laptop (makin ringan makin baik)' },
+    { id: 7, kode: 'C7', nama: 'Portabilitas (Berat)', tipe: 'Cost', satuan: 'Kilogram (Kg)', rank: 7, bobot: 0, keterangan: 'Bobot fisik laptop (makin ringan makin baik dibawa)' },
     { id: 8, kode: 'C8', nama: 'Kualitas Layar', tipe: 'Benefit', satuan: 'Skor 0-100', rank: 8, bobot: 0, keterangan: 'Kualitas panel display, akurasi warna & refresh rate' },
     { id: 9, kode: 'C9', nama: 'Masa & Layanan Garansi', tipe: 'Benefit', satuan: 'Skala 1-5', rank: 9, bobot: 0, keterangan: 'Lama garansi resmi & perlindungan kerusakan (ADP)' },
     { id: 10, kode: 'C10', nama: 'Kemampuan Upgrade', tipe: 'Benefit', satuan: 'Skala 1-5', rank: 10, bobot: 0, keterangan: 'Kemudahan & fleksibilitas ekspansi slot RAM & SSD' }
@@ -968,11 +976,19 @@ function spkApp() {
     isInjectingDemo: false,
     modalInput: false,
     modalMatriks: false,
+    modalPanduan: false, // Modal Landasan Teori Akademik Skripsi
     modalSql: false,
     copiedSql: false,
     isEditMode: false,
     isSaving: false,
     filterStatus: getInitialFilter(),
+    
+    // Fitur Konsultasi Khusus Customer Toko Super Komputer
+    customerNama: '',
+    budgetMaxFilter: null,
+    kategoriFilter: 'all',
+    activePreset: null,
+
     toasts: [],
     lastCalculatedAt: null,
     hasCalculated: false,
@@ -1027,8 +1043,6 @@ function spkApp() {
 
       // 2. Ambil data dari Supabase / Local Storage
       await this.loadDataLaptops(false);
-
-      // Rekomendasi TOPSIS hanya keluar ketika user menekan tombol "Kalkulasi Rekomendasi TOPSIS".
     },
 
     saveSettings() {
@@ -1134,6 +1148,7 @@ function spkApp() {
     },
 
     // 1. RUMUS PEMBOBOTAN METODE ROC (Rank Order Centroid - m = 10)
+    // Formula Akademik: w_i = (1/m) * SUM_{k=i}^m (1/k)
     hitungBobotROC() {
       const m = this.kriteriaList.length; // m = 10
       const sorted = [...this.kriteriaList].sort((a, b) => a.rank - b.rank);
@@ -1169,9 +1184,60 @@ function spkApp() {
 
     // Handler saat pengguna mengubah rank pada dropdown kriteria
     onRankChange() {
+      this.activePreset = null; // Custom user setting
       this.kriteriaList.forEach(k => {
         k.rank = Number(k.rank);
       });
+      this.hitungBobotROC();
+      this.saveSettings();
+    },
+
+    // APLIKASI PRESET KEBUTUHAN CUSTOMER (FITUR KHAS SPK TOKO SUPER KOMPUTER)
+    applyCustomerPreset(presetKey) {
+      this.activePreset = presetKey;
+      let newRanks = {};
+
+      switch(presetKey) {
+        case 'mahasiswa':
+          // Mahasiswa: Prioritas Harga Hemat (C1), Baterai Awet (C6), Ringan (C7), Layar Bagus (C8)
+          newRanks = { C1: 1, C6: 2, C7: 3, C8: 4, C3: 5, C4: 6, C2: 7, C9: 8, C10: 9, C5: 10 };
+          this.showToast("🎯 Preset 'Mahasiswa / Pelajar' diterapkan (Fokus Harga Hemat & Baterai).", "info");
+          break;
+
+        case 'gaming':
+          // Gaming: Prioritas GPU (C5), CPU (C2), RAM (C3), Layar High-Hz (C8), SSD (C4)
+          newRanks = { C5: 1, C2: 2, C3: 3, C8: 4, C4: 5, C6: 6, C10: 7, C9: 8, C1: 9, C7: 10 };
+          this.showToast("🎯 Preset 'Gaming & 3D Rendering' diterapkan (Fokus GPU & CPU).", "info");
+          break;
+
+        case 'creator':
+          // Creator: Prioritas Layar Akurasi Tinggi (C8), CPU (C2), RAM (C3), SSD (C4), GPU (C5)
+          newRanks = { C8: 1, C2: 2, C3: 3, C4: 4, C5: 5, C1: 6, C6: 7, C9: 8, C7: 9, C10: 10 };
+          this.showToast("🎯 Preset 'Content Creator / Desain' diterapkan (Fokus Layar OLED & CPU).", "info");
+          break;
+
+        case 'bisnis':
+          // Bisnis: Prioritas Ringan (C7), Baterai (C6), Garansi ADP (C9), Harga (C1), Layar (C8)
+          newRanks = { C7: 1, C6: 2, C9: 3, C1: 4, C8: 5, C3: 6, C2: 7, C4: 8, C10: 9, C5: 10 };
+          this.showToast("🎯 Preset 'Bisnis & Eksekutif Mobile' diterapkan (Fokus Portabilitas & Garansi).", "info");
+          break;
+
+        case 'upgrade':
+          // Investasi Jangka Panjang: Prioritas Upgradeability (C10), Garansi (C9), RAM (C3), SSD (C4)
+          newRanks = { C10: 1, C9: 2, C3: 3, C4: 4, C2: 5, C1: 6, C6: 7, C8: 8, C7: 9, C5: 10 };
+          this.showToast("🎯 Preset 'Investasi Jangka Panjang' diterapkan (Fokus Upgrade & Garansi).", "info");
+          break;
+
+        default:
+          return;
+      }
+
+      this.kriteriaList.forEach(k => {
+        if (newRanks[k.kode]) {
+          k.rank = newRanks[k.kode];
+        }
+      });
+
       this.hitungBobotROC();
       this.saveSettings();
     },
@@ -1183,6 +1249,7 @@ function spkApp() {
     },
 
     resetPrioritas() {
+      this.activePreset = null;
       this.kriteriaList.forEach((item, i) => {
         item.rank = i + 1;
       });
@@ -1192,7 +1259,7 @@ function spkApp() {
       } catch(e) {}
       this.hitungBobotROC();
       this.saveSettings();
-      this.showToast("Prioritas kriteria dikembalikan ke default (Rank 1 s/d 10). Tekan tombol 'Kalkulasi Rekomendasi TOPSIS' untuk memproses hasil.", "info");
+      this.showToast("Prioritas kriteria dikembalikan ke default (Rank 1 s/d 10).", "info");
     },
 
     // 2. MEMUAT DATA LAPTOP MELALUI SUPABASE SERVICE
@@ -1259,8 +1326,8 @@ function spkApp() {
         baterai_wh: null,
         berat_kg: null,
         layar_score: null,
-        garansi_score: 3, // Default 2 Thn Resmi
-        upgrade_score: 3, // Default 1 Slot RAM + 1 M.2 SSD
+        garansi_score: 3,
+        upgrade_score: 3,
         spesifikasi_ringkas: ''
       };
       this.modalInput = true;
@@ -1315,7 +1382,6 @@ function spkApp() {
         this.showToast(`✅ Data laptop "${payload.nama}" berhasil tersimpan di Supabase Cloud & tersinkron di semua device!`, "success");
         await this.loadDataLaptops(false);
       } else {
-        // Fallback simpan lokal jika Supabase offline/belum termigrasi
         if (this.isEditMode && this.formLaptop.id) {
           const index = this.laptopsData.findIndex(l => l.id === this.formLaptop.id);
           if (index !== -1) {
@@ -1458,12 +1524,27 @@ function spkApp() {
       this.hitungBobotROC();
 
       let dataset = [...this.laptopsData];
+
+      // A. Filter Status Ketersediaan
       if (this.filterStatus !== 'all') {
         dataset = dataset.filter(l => l.status === this.filterStatus);
       }
 
+      // B. Filter Budget Maksimal Customer (Jika diisi)
+      if (this.budgetMaxFilter && Number(this.budgetMaxFilter) > 0) {
+        dataset = dataset.filter(l => Number(l.harga) <= Number(this.budgetMaxFilter));
+      }
+
+      // C. Filter Kategori Penggunaan Customer (Jika dipilih)
+      if (this.kategoriFilter && this.kategoriFilter !== 'all') {
+        dataset = dataset.filter(l => {
+          const kat = (l.kategori_penggunaan || '').toLowerCase();
+          return kat.includes(this.kategoriFilter.toLowerCase());
+        });
+      }
+
       if (dataset.length === 0) {
-        this.showToast("Tidak ada laptop pada filter ini untuk dikalkulasi.", "error");
+        this.showToast("Tidak ada laptop yang sesuai dengan filter budget & kriteria ketersediaan ini.", "error");
         this.hasilRanking = [];
         this.matriksData = null;
         this.hasCalculated = false;
@@ -1474,6 +1555,7 @@ function spkApp() {
       this.kriteriaList.forEach(k => bobot[k.kode] = k.bobot);
 
       // A. Pembagi Kuadrat Euclidean 10 Kriteria (Normalization Divisors)
+      // Rumus: Pembagi_j = sqrt( SUM_{i=1}^n (x_{ij})^2 )
       const pembagi = {
         c1: Math.sqrt(dataset.reduce((s, d) => s + Math.pow(Number(d.harga), 2), 0)) || 1,
         c2: Math.sqrt(dataset.reduce((s, d) => s + Math.pow(Number(d.cpu_score), 2), 0)) || 1,
@@ -1523,8 +1605,8 @@ function spkApp() {
       });
 
       // D. Solusi Ideal Positif (A+) dan Solusi Ideal Negatif (A-)
-      // Kriteria Cost (C1, C7): A+ = min, A- = max
-      // Kriteria Benefit (C2, C3, C4, C5, C6, C8, C9, C10): A+ = max, A- = min
+      // Kriteria Cost (C1, C7): A+ = min(y_ij), A- = max(y_ij)
+      // Kriteria Benefit (C2, C3, C4, C5, C6, C8, C9, C10): A+ = max(y_ij), A- = min(y_ij)
       const APlus = {
         y1: Math.min(...matrixY.map(m => m.y1)),
         y2: Math.max(...matrixY.map(m => m.y2)),
@@ -1552,6 +1634,9 @@ function spkApp() {
       };
 
       // E. Jarak Euclidean 10 Dimensi (D+, D-) dan Nilai Preferensi (Vi)
+      // D_i^+ = sqrt( SUM_{j=1}^{10} (y_{ij} - y_j^+)^2 )
+      // D_i^- = sqrt( SUM_{j=1}^{10} (y_{ij} - y_j^-)^2 )
+      // V_i = D_i^- / (D_i^+ + D_i^-)
       const hasil = dataset.map(d => {
         const y = matrixY.find(m => m.id === d.id);
 
@@ -1584,20 +1669,22 @@ function spkApp() {
       // Urutkan alternatif berdasarkan nilai Vi tertinggi (Descending)
       this.hasilRanking = hasil.sort((a, b) => b.skorVi - a.skorVi);
 
-      // Simpan data kalkulasi matriks lengkap untuk modal transparansi
+      // Simpan data kalkulasi matriks lengkap untuk modal transparansi matematis skripsi
       this.matriksData = {
         matrixR,
         matrixY,
         APlus,
         AMinus,
-        calculatedRanks: this.kriteriaList.map(k => ({ kode: k.kode, rank: k.rank, bobot: k.bobot }))
+        pembagi,
+        totalEvaluated: dataset.length,
+        calculatedRanks: this.kriteriaList.map(k => ({ kode: k.kode, nama: k.nama, rank: k.rank, bobot: k.bobot }))
       };
 
       this.hasCalculated = true;
       this.lastCalculatedAt = new Date().toLocaleTimeString('id-ID');
 
       if (scroll) {
-        this.showToast("Kalkulasi Rekomendasi TOPSIS (10 Kriteria) berhasil dievaluasi!");
+        this.showToast(`Kalkulasi Rekomendasi TOPSIS (10 Kriteria) berhasil dievaluasi untuk ${dataset.length} laptop!`);
         setTimeout(() => {
           const el = document.getElementById('hasilSection');
           if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -1605,7 +1692,17 @@ function spkApp() {
       }
     },
 
-    // 9. EKSPOR KE CSV (Lengkap 10 Kriteria)
+    // 9. CETAK LEMBAR KONSULTASI REKOMENDASI CUSTOMER (PRINT / PDF)
+    cetakLaporanKonsultasi() {
+      if (this.hasilRanking.length === 0) {
+        this.kalkulasiTOPSIS(false);
+      }
+      setTimeout(() => {
+        window.print();
+      }, 200);
+    },
+
+    // 10. EKSPOR KE CSV (Lengkap 10 Kriteria)
     exportCSV() {
       if (this.hasilRanking.length === 0) return;
       

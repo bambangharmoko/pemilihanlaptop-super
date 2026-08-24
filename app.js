@@ -1043,6 +1043,15 @@ function spkApp() {
 
       // 2. Ambil data dari Supabase / Local Storage
       await this.loadDataLaptops(false);
+
+      // 3. Sinkronkan otomatis 10 Master Kriteria (C1 - C10) ke tabel 'kriteria' di Supabase Cloud
+      if (window.SupabaseService && window.SupabaseService.syncMasterKriteria) {
+        window.SupabaseService.syncMasterKriteria(this.kriteriaList).then(res => {
+          if (res && !res.error) {
+            console.log("✅ 10 Master Kriteria (C1-C10) tersinkron otomatis ke tabel 'kriteria' Supabase Cloud.");
+          }
+        }).catch(() => {});
+      }
     },
 
     saveSettings() {

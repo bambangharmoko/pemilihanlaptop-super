@@ -281,6 +281,35 @@ ON CONFLICT (kode) DO UPDATE SET
     } catch (err) {
       return { data: null, error: err, isTableMissing: this.isTableMissingError(err) };
     }
+  },
+
+  /**
+   * Sinkronkan 10 Master Kriteria (C1 - C10) ke tabel 'kriteria' di Supabase Cloud secara otomatis
+   * @param {Array} kriteriaList 
+   * @returns {Promise<{data: any, error: any}>}
+   */
+  async syncMasterKriteria(kriteriaList) {
+    if (!supabaseClient) return { data: null, error: null };
+
+    try {
+      const payload = kriteriaList.map(k => ({
+        kode: k.kode,
+        nama: k.nama,
+        tipe: k.tipe,
+        satuan: k.satuan,
+        keterangan: k.keterangan || '',
+        default_rank: Number(k.id || k.rank)
+      }));
+
+      const { data, error } = await supabaseClient
+        .from('kriteria')
+        .upsert(payload, { onConflict: 'kode' })
+        .select();
+
+      return { data, error };
+    } catch (err) {
+      return { data: null, error: err };
+    }
   }
 };
 

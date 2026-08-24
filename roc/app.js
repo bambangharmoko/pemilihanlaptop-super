@@ -1054,6 +1054,12 @@ function spkApp() {
       }
     },
 
+    setFilter(status) {
+      this.filterStatus = status;
+      this.saveSettings();
+      this.kalkulasiTOPSIS(false);
+    },
+
     saveSettings() {
       try {
         localStorage.setItem('spk_filter_status', this.filterStatus);

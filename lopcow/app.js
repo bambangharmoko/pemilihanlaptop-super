@@ -630,10 +630,10 @@ function spkLopcowApp() {
 
       if (isUserClick) {
         this.showToast(`Kalkulasi LOPCOW & TOPSIS berhasil! Menghasilkan ranking ${ranked.length} laptop.`, "success");
-        this.$nextTick(() => {
+        setTimeout(() => {
           const el = document.getElementById('hasilSection');
           if (el) el.scrollIntoView({ behavior: 'smooth' });
-        });
+        }, 100);
       }
     },
 

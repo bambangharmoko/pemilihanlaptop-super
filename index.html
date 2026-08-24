@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Komputer - SPK Pemilihan Laptop (ROC & TOPSIS)</title>
+  <meta name="description" content="Sistem Pendukung Keputusan Pemilihan Laptop Toko Super Komputer menggunakan integrasi metode Rank Order Centroid (ROC) dan TOPSIS berbasis Supabase.">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Print Styles for Official Executive Report */
+    @media print {
+      body {
+        background-color: white !important;
+        color: black !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .print-card {
+        box-shadow: none !important;
+        border: 1px solid #e2e8f0 !important;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white" x-data="spkApp()" x-init="init()">
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none no-print">
+    <template x-for="toast in toasts" :key="toast.id">
+      <div class="pointer-events-auto flex items-center justify-between p-4 rounded-xl shadow-xl text-xs font-semibold transition-all transform duration-300"
+           :class="toast.type === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/20' : (toast.type === 'error' ? 'bg-rose-600 text-white shadow-rose-500/20' : 'bg-slate-900 text-white shadow-slate-900/20')"
+           x-transition:enter="translate-y-2 opacity-0"
+           x-transition:enter-end="translate-y-0 opacity-100"
+           x-transition:leave="opacity-100"
+           x-transition:leave-end="opacity-0">
+        <div class="flex items-center space-x-2.5">
+          <template x-if="toast.type === 'success'">
+            <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+          </template>
+          <template x-if="toast.type === 'error'">
+            <svg class="w-4 h-4 text-rose-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </template>
+          <template x-if="toast.type === 'info'">
+            <svg class="w-4 h-4 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </template>
+          <span x-text="toast.message"></span>
+        </div>
+        <button @click="removeToast(toast.id)" class="opacity-75 hover:opacity-100 ml-3">&times;</button>
+      </div>
+    </template>
+  </div>
+
+  <!-- HEADER / NAVBAR -->
+  <header class="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200/80 shadow-xs no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-700 via-indigo-600 to-sky-500 flex items-center justify-center text-white font-extrabold text-base shadow-md shadow-indigo-200">
+          SK
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-extrabold text-slate-900 text-base tracking-tight">Super Komputer</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">ROC & TOPSIS</span>
+          </div>
+          <p class="text-[11px] text-slate-500 font-medium">Sistem Pendukung Keputusan Pemilihan Laptop</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons & Database Status -->
+      <div class="flex items-center space-x-2.5 sm:space-x-3">
+        <!-- DB Status Badge -->
+        <div class="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border"
+             :class="dbStatus === 'online' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'">
+          <span class="w-2 h-2 rounded-full animate-pulse" :class="dbStatus === 'online' ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+          <span x-text="dbStatus === 'online' ? 'Supabase Terhubung' : 'Mode Offline / Lokal'"></span>
+        </div>
+
+        <!-- Seed Demo Data (If empty) -->
+        <button @click="seedDataContoh()" 
+                class="hidden sm:inline-flex text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition items-center space-x-1.5"
+                title="Isi database dengan data contoh laptop untuk simulasi">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          <span>Demo Data</span>
+        </button>
+
+        <!-- Add Laptop Modal Button -->
+        <button @click="bukaModalTambah()" class="text-xs font-bold px-3.5 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center space-x-1.5 shadow-sm shadow-indigo-200 active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span class="hidden xs:inline">+ Input Laptop</span>
+          <span class="xs:hidden">+ Laptop</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- PRINT ONLY HEADER -->
+  <div class="hidden print-only p-6 border-b border-slate-300">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Laporan Hasil Keputusan Pemilihan Laptop</h1>
+        <p class="text-sm text-slate-600">Toko Super Komputer &bull; Metode Rank Order Centroid (ROC) & TOPSIS</p>
+      </div>
+      <div class="text-right text-xs text-slate-500">
+        <p>Tanggal Cetak: <span x-text="new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })"></span></p>
+        <p>Status: Resmi / Final</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex-grow w-full">
+
+    <!-- HERO SECTION -->
+    <div class="max-w-3xl mb-8 no-print">
+      <div class="inline-flex items-center space-x-2 text-[11px] uppercase font-bold tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full mb-3 shadow-xs">
+        <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+        <span>Multi-Criteria Decision Making (MCDM)</span>
+      </div>
+      <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        Rekomendasi Pemilihan Laptop <span class="bg-gradient-to-r from-indigo-600 to-sky-600 bg-clip-text text-transparent">Super Komputer</span>
+      </h1>
+      <p class="text-slate-600 mt-2 text-xs sm:text-sm leading-relaxed">
+        Sistem menghitung pembobotan 8 kriteria secara objektif dengan rumus deret harmonik <strong class="text-slate-800 font-semibold">Rank Order Centroid (ROC)</strong> dan menentukan alternatif laptop paling ideal berdasarkan kedekatan geometris <strong class="text-slate-800 font-semibold">TOPSIS</strong>.
+      </p>
+    </div>
+
+    <!-- 1. ATUR PRIORITAS KRITERIA (METODE ROC) -->
+    <section class="bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/90 shadow-sm mb-8 no-print">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-5 gap-3">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">1</span>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Atur Prioritas Kriteria Kepentingan (ROC)</h2>
+          </div>
+          <p class="text-xs text-slate-500 mt-1 pl-8">Ubah urutan peringkat prioritas (1 = Terpenting, 8 = Terendah). Bobot dihitung otomatis oleh formula harmonik ROC.</p>
+        </div>
+        <div class="flex items-center space-x-2 self-start sm:self-auto pl-8 sm:pl-0">
+          <button @click="resetPrioritas()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50/60 hover:bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 transition flex items-center space-x-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span>Reset Default</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- GRID 8 KRITERIA CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        <template x-for="item in kriteriaList" :key="item.id">
+          <div class="p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between"
+               :class="item.rank === 1 ? 'bg-indigo-50/40 border-indigo-300 ring-2 ring-indigo-500/10' : 'bg-slate-50/60 border-slate-200 hover:border-slate-300'">
+            
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-1.5">
+                  <span class="text-xs font-extrabold px-2 py-0.5 rounded bg-white text-slate-800 border border-slate-200 font-mono" x-text="item.kode"></span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        :class="item.tipe === 'Cost' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
+                        x-text="item.tipe"></span>
+                </div>
+                <span class="text-[11px] font-bold font-mono text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md" x-text="(item.bobot * 100).toFixed(2) + '%'"></span>
+              </div>
+              <h3 class="font-bold text-slate-900 text-sm" x-text="item.nama"></h3>
+              <p class="text-[11px] text-slate-500 mt-0.5 line-clamp-2" x-text="item.keterangan"></p>
+            </div>
+
+            <!-- Priority Dropdown & Progress Bar -->
+            <div class="mt-4 pt-3 border-t border-slate-200/80">
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-[11px] font-semibold text-slate-500">Peringkat Kepentingan:</label>
+              </div>
+              <select x-model.number="item.rank" @change="hitungBobotROC()" 
+                      class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
+                <template x-for="n in 8" :key="n">
+                  <option :value="n" x-text="'Rank ' + n + (n === 1 ? ' (Paling Utama)' : (n === 8 ? ' (Terendah)' : ''))"></option>
+                </template>
+              </select>
+              
+              <!-- Mini Weight Visual Bar -->
+              <div class="w-full bg-slate-200 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                <div class="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" :style="'width: ' + (item.bobot * 100 * 2.5) + '%'"></div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- FILTER STATUS LAPTOP & CALCULATE BUTTON -->
+      <div class="mt-7 pt-5 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
+        
+        <!-- Filter Tabs -->
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <span class="text-xs font-bold text-slate-700 mr-1">Filter Ketersediaan:</span>
+          <div class="inline-flex rounded-xl border border-slate-200 bg-slate-100/80 p-1 text-xs">
+            <button @click="filterStatus = 'all'; hitungUlangJikaAdaHasil()" 
+                    :class="filterStatus === 'all' ? 'bg-white shadow-xs text-slate-900 font-bold' : 'text-slate-600 font-medium hover:text-slate-900'" 
+                    class="px-3 py-1.5 rounded-lg transition">Semua (<span x-text="laptopsData.length"></span>)</button>
+            <button @click="filterStatus = 'ready'; hitungUlangJikaAdaHasil()" 
+                    :class="filterStatus === 'ready' ? 'bg-white shadow-xs text-emerald-700 font-bold' : 'text-slate-600 font-medium hover:text-emerald-700'" 
+                    class="px-3 py-1.5 rounded-lg transition">Ready Toko (<span x-text="laptopsData.filter(l => l.status === 'ready').length"></span>)</button>
+            <button @click="filterStatus = 'indent'; hitungUlangJikaAdaHasil()" 
+                    :class="filterStatus === 'indent' ? 'bg-white shadow-xs text-amber-700 font-bold' : 'text-slate-600 font-medium hover:text-amber-700'" 
+                    class="px-3 py-1.5 rounded-lg transition">Indent (<span x-text="laptopsData.filter(l => l.status === 'indent').length"></span>)</button>
+          </div>
+        </div>
+
+        <!-- Action Calculate -->
+        <div class="flex items-center space-x-2.5 w-full md:w-auto justify-end">
+          <button @click="kalkulasiTOPSIS()" 
+                  :disabled="laptopsData.length === 0"
+                  class="w-full md:w-auto px-7 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-indigo-200 hover:shadow-indigo-300 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2">
+            <svg class="w-4 h-4 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            <span>Kalkulasi Rekomendasi TOPSIS</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATE JIKA DATABASE MASIH KOSONG -->
+    <section x-show="laptopsData.length === 0" class="bg-white rounded-2xl p-10 border border-dashed border-slate-300 text-center mb-8 no-print" x-transition>
+      <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3.5 shadow-xs">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+      </div>
+      <h3 class="text-base font-bold text-slate-800">Database Laptop Masih Kosong</h3>
+      <p class="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-5">Silakan masukkan data laptop toko Super Komputer secara manual atau muat dataset demo contoh untuk mencoba komputasi SPK secara instan.</p>
+      
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        <button @click="bukaModalTambah()" class="px-5 py-2.5 text-xs font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-200 transition flex items-center space-x-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>Input Manual Laptop</span>
+        </button>
+        <button @click="seedDataContoh()" class="px-5 py-2.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center space-x-1.5">
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          <span>Muat 6 Laptop Contoh</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. HASIL PERANKINGAN TOPSIS -->
+    <section id="hasilSection" class="mb-10" x-show="hasilRanking.length > 0" x-transition>
+      
+      <!-- Section Title & Toolbars -->
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">2</span>
+            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Hasil Rekomendasi Laptop Terbaik</h2>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5 pl-8">Urutan peringkat berdasarkan nilai preferensi kedekatan relatif <span class="font-mono font-bold text-slate-700">(V_i)</span> tertinggi terhadap Solusi Ideal.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 pl-8 sm:pl-0 no-print">
+          <!-- Button Detail Perhitungan Matrix -->
+          <button @click="modalMatriks = true" class="text-xs font-semibold px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <span>Detail Matriks Hitung</span>
+          </button>
+          <!-- Button Export CSV -->
+          <button @click="exportCSV()" class="text-xs font-semibold px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition flex items-center space-x-1.5 shadow-2xs">
+            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span>Ekspor CSV</span>
+          </button>
+          <!-- Button Print / PDF -->
+          <button @click="window.print()" class="text-xs font-semibold px-3 py-2 rounded-xl bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition flex items-center space-x-1.5 shadow-2xs">
+            <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            <span>Cetak Laporan</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TOP 3 CARDS HIGHLIGHT -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        <template x-for="(laptop, index) in hasilRanking.slice(0, 3)" :key="laptop.id">
+          <div class="rounded-2xl border p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-md print-card"
+               :class="index === 0 ? 'border-emerald-300 bg-gradient-to-b from-emerald-50/50 via-white to-white ring-2 ring-emerald-500/20' : (index === 1 ? 'border-indigo-200 bg-gradient-to-b from-indigo-50/30 via-white to-white' : 'border-slate-200 bg-white')">
+            
+            <!-- Top Badge Ribbon -->
+            <div class="flex items-center justify-between mb-3.5">
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider text-white flex items-center space-x-1"
+                      :class="index === 0 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 shadow-xs' : (index === 1 ? 'bg-gradient-to-r from-indigo-600 to-blue-600 shadow-xs' : 'bg-slate-700')">
+                  <template x-if="index === 0"><span>🏆</span></template>
+                  <template x-if="index === 1"><span>🥈</span></template>
+                  <template x-if="index === 2"><span>🥉</span></template>
+                  <span x-text="'Peringkat #' + (index + 1)"></span>
+                </span>
+              </div>
+              
+              <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border"
+                    :class="laptop.status === 'ready' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'"
+                    x-text="laptop.status === 'ready' ? '● Ready di Toko' : '○ Indent / Pre-Order'">
+              </span>
+            </div>
+
+            <!-- Laptop Title -->
+            <div class="mb-4">
+              <h3 class="font-extrabold text-slate-900 text-lg leading-tight" x-text="laptop.nama"></h3>
+              <p class="text-xs text-slate-500 mt-1 flex items-center space-x-2">
+                <span class="font-semibold text-slate-700" x-text="laptop.merek"></span>
+                <span>&bull;</span>
+                <span class="bg-slate-100 px-2 py-0.5 rounded text-[11px]" x-text="laptop.kategori_penggunaan || 'Umum'"></span>
+              </p>
+              <p x-show="laptop.spesifikasi_ringkas" class="text-xs text-slate-600 mt-2 italic bg-slate-50 p-2 rounded-lg border border-slate-100" x-text="laptop.spesifikasi_ringkas"></p>
+            </div>
+
+            <!-- Specs Grid -->
+            <div class="space-y-2 py-3 border-y border-slate-100 text-xs">
+              <div class="flex justify-between items-center text-slate-600">
+                <span class="flex items-center space-x-1.5">
+                  <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                  <span>CPU & GPU:</span>
+                </span>
+                <span class="font-semibold text-slate-900 font-mono" x-text="'Skor ' + laptop.cpu_score + ' / ' + laptop.gpu_score"></span>
+              </div>
+              <div class="flex justify-between items-center text-slate-600">
+                <span class="flex items-center space-x-1.5">
+                  <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7z"></path></svg>
+                  <span>RAM & Storage:</span>
+                </span>
+                <span class="font-semibold text-slate-900" x-text="laptop.ram_gb + ' GB RAM / ' + laptop.ssd_gb + ' GB SSD'"></span>
+              </div>
+              <div class="flex justify-between items-center text-slate-600">
+                <span class="flex items-center space-x-1.5">
+                  <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                  <span>Baterai & Bobot:</span>
+                </span>
+                <span class="font-semibold text-slate-900" x-text="laptop.baterai_wh + ' Wh / ' + laptop.berat_kg + ' Kg'"></span>
+              </div>
+              <div class="flex justify-between items-center text-slate-600">
+                <span class="flex items-center space-x-1.5">
+                  <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                  <span>Skor Layar:</span>
+                </span>
+                <span class="font-semibold text-slate-900 font-mono" x-text="laptop.layar_score + ' / 100'"></span>
+              </div>
+            </div>
+
+            <!-- Price & Preference Score Vi -->
+            <div class="mt-4 pt-3 flex items-end justify-between">
+              <div>
+                <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">HARGA TOKO</span>
+                <span class="text-base sm:text-lg font-extrabold text-slate-900" x-text="'Rp ' + Number(laptop.harga).toLocaleString('id-ID')"></span>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">PREFERENSI (V_i)</span>
+                <span class="text-lg sm:text-xl font-extrabold font-mono"
+                      :class="index === 0 ? 'text-emerald-600' : 'text-indigo-600'"
+                      x-text="laptop.skorVi.toFixed(4)"></span>
+              </div>
+            </div>
+
+          </div>
+        </template>
+      </div>
+
+      <!-- COMPLETE COMPARISON TABLE -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden mb-6">
+        <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="font-extrabold text-slate-900 text-sm sm:text-base">Tabel Lengkap Komparasi & Ranking TOPSIS</h3>
+            <p class="text-xs text-slate-500">Nilai metrik kriteria alternatif beserta jarak ideal (D+, D-) dan skor akhir preferensi (Vi).</p>
+          </div>
+          <span class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600" x-text="'Total ' + hasilRanking.length + ' Laptop Terkalkulasi'"></span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-600 border-collapse">
+            <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-3.5 px-3 text-center w-12">Rank</th>
+                <th class="py-3.5 px-4 min-w-[200px]">Nama Laptop</th>
+                <th class="py-3.5 px-3">Status</th>
+                <th class="py-3.5 px-3 text-right">Harga (C1)</th>
+                <th class="py-3.5 px-3 text-center">CPU (C2)</th>
+                <th class="py-3.5 px-3 text-center">RAM (C3)</th>
+                <th class="py-3.5 px-3 text-center">SSD (C4)</th>
+                <th class="py-3.5 px-3 text-center">GPU (C5)</th>
+                <th class="py-3.5 px-3 text-center">Baterai (C6)</th>
+                <th class="py-3.5 px-3 text-center">Bobot (C7)</th>
+                <th class="py-3.5 px-3 text-center">Layar (C8)</th>
+                <th class="py-3.5 px-3 text-center font-mono text-slate-500">D+</th>
+                <th class="py-3.5 px-3 text-center font-mono text-slate-500">D-</th>
+                <th class="py-3.5 px-4 text-center font-extrabold text-indigo-700 bg-indigo-50/50">Skor (V_i)</th>
+                <th class="py-3.5 px-3 text-center no-print w-24">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <template x-for="(item, idx) in hasilRanking" :key="item.id">
+                <tr class="hover:bg-slate-50/80 transition" :class="idx === 0 ? 'bg-emerald-50/20 font-semibold' : ''">
+                  <!-- Rank Badge -->
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black font-mono"
+                          :class="idx === 0 ? 'bg-emerald-600 text-white' : (idx === 1 ? 'bg-indigo-600 text-white' : (idx === 2 ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600'))"
+                          x-text="idx + 1">
+                    </span>
+                  </td>
+                  
+                  <!-- Laptop Name -->
+                  <td class="py-3.5 px-4">
+                    <span class="font-bold text-slate-900 block" x-text="item.nama"></span>
+                    <span class="text-[11px] text-slate-400" x-text="item.merek + (item.kategori_penggunaan ? ' • ' + item.kategori_penggunaan : '')"></span>
+                  </td>
+
+                  <!-- Status -->
+                  <td class="py-3.5 px-3">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap"
+                          :class="item.status === 'ready' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'"
+                          x-text="item.status === 'ready' ? 'Ready' : 'Indent'"></span>
+                  </td>
+
+                  <!-- Criteria Values -->
+                  <td class="py-3.5 px-3 text-right font-medium text-slate-900" x-text="'Rp ' + (item.harga/1000000).toFixed(1) + 'jt'"></td>
+                  <td class="py-3.5 px-3 text-center font-mono" x-text="item.cpu_score"></td>
+                  <td class="py-3.5 px-3 text-center font-medium" x-text="item.ram_gb + ' GB'"></td>
+                  <td class="py-3.5 px-3 text-center font-medium" x-text="item.ssd_gb + ' GB'"></td>
+                  <td class="py-3.5 px-3 text-center font-mono" x-text="item.gpu_score"></td>
+                  <td class="py-3.5 px-3 text-center" x-text="item.baterai_wh + ' Wh'"></td>
+                  <td class="py-3.5 px-3 text-center" x-text="item.berat_kg + ' Kg'"></td>
+                  <td class="py-3.5 px-3 text-center font-mono" x-text="item.layar_score"></td>
+
+                  <!-- Distances D+ & D- -->
+                  <td class="py-3.5 px-3 text-center font-mono text-slate-400 text-[11px]" x-text="item.dPlus.toFixed(4)"></td>
+                  <td class="py-3.5 px-3 text-center font-mono text-slate-400 text-[11px]" x-text="item.dMinus.toFixed(4)"></td>
+                  
+                  <!-- Preference Score Vi -->
+                  <td class="py-3.5 px-4 text-center font-mono font-extrabold text-sm bg-indigo-50/40" 
+                      :class="idx === 0 ? 'text-emerald-700 font-black' : 'text-indigo-600'" 
+                      x-text="item.skorVi.toFixed(4)">
+                  </td>
+
+                  <!-- Row Action (Edit/Delete) -->
+                  <td class="py-3.5 px-3 text-center no-print">
+                    <div class="flex items-center justify-center space-x-1.5">
+                      <button @click="bukaModalEdit(item)" class="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition" title="Edit Laptop">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                      </button>
+                      <button @click="hapusLaptop(item.id, item.nama)" class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Hapus Laptop">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. DATA LAPTOP TOKO SUPER KOMPUTER (CRUD LIST) -->
+    <section class="bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/90 shadow-sm mb-10 no-print" x-show="laptopsData.length > 0">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-4 gap-3">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="w-6 h-6 rounded-lg bg-slate-700 text-white flex items-center justify-center text-xs font-bold">3</span>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Kelola Data Laptop Toko</h2>
+          </div>
+          <p class="text-xs text-slate-500 mt-1 pl-8">Daftar inventaris laptop yang tersimpan di database Supabase (Tersedia opsi edit & hapus).</p>
+        </div>
+
+        <div class="flex items-center space-x-2 self-start sm:self-auto pl-8 sm:pl-0">
+          <button @click="bukaModalTambah()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center space-x-1.5 shadow-sm shadow-emerald-200">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>Tambah Laptop Baru</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Inventory Grid View -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <template x-for="item in laptopsData" :key="item.id">
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-indigo-200 transition group flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full border"
+                      :class="item.status === 'ready' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'"
+                      x-text="item.status === 'ready' ? 'Ready' : 'Indent'"></span>
+                <span class="text-xs font-extrabold text-slate-900" x-text="'Rp ' + Number(item.harga).toLocaleString('id-ID')"></span>
+              </div>
+              <h4 class="font-bold text-slate-900 text-sm" x-text="item.nama"></h4>
+              <p class="text-xs text-slate-500 mt-0.5" x-text="item.merek + ' • ' + (item.kategori_penggunaan || 'Umum')"></p>
+              
+              <div class="grid grid-cols-2 gap-1.5 mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-600">
+                <div>CPU: <strong class="text-slate-800" x-text="item.cpu_score"></strong></div>
+                <div>GPU: <strong class="text-slate-800" x-text="item.gpu_score"></strong></div>
+                <div>RAM: <strong class="text-slate-800" x-text="item.ram_gb + ' GB'"></strong></div>
+                <div>SSD: <strong class="text-slate-800" x-text="item.ssd_gb + ' GB'"></strong></div>
+                <div>Baterai: <strong class="text-slate-800" x-text="item.baterai_wh + ' Wh'"></strong></div>
+                <div>Berat: <strong class="text-slate-800" x-text="item.berat_kg + ' Kg'"></strong></div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-200/70 flex items-center justify-between">
+              <span class="text-[10px] text-slate-400" x-text="'ID: #' + item.id"></span>
+              <div class="flex items-center space-x-2">
+                <button @click="bukaModalEdit(item)" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded hover:bg-indigo-50 transition">
+                  Edit
+                </button>
+                <button @click="hapusLaptop(item.id, item.nama)" class="text-xs font-semibold text-rose-600 hover:text-rose-800 px-2 py-1 rounded hover:bg-rose-50 transition">
+                  Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <!-- MODAL POPUP INPUT & EDIT DATA LAPTOP -->
+    <div x-show="modalInput" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm no-print" x-transition>
+      <div class="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 overflow-y-auto max-h-[92vh]" @click.outside="modalInput = false">
+        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div>
+            <h3 class="font-extrabold text-lg text-slate-900" x-text="isEditMode ? 'Edit Data Laptop' : 'Input Data Laptop Baru'"></h3>
+            <p class="text-xs text-slate-500">Data tersinkronisasi otomatis ke Database Supabase Toko Super Komputer.</p>
+          </div>
+          <button @click="modalInput = false" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none p-1">&times;</button>
+        </div>
+
+        <!-- Form Laptop -->
+        <form @submit.prevent="simpanLaptop()" class="mt-4 space-y-4 text-xs">
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Nama Seri Laptop: <span class="text-rose-500">*</span></label>
+              <input type="text" x-model="formLaptop.nama" required placeholder="Contoh: Lenovo Legion 5 Slim" 
+                     class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Merek Laptop: <span class="text-rose-500">*</span></label>
+              <input type="text" x-model="formLaptop.merek" required placeholder="Contoh: Lenovo / Asus / Apple / Acer" 
+                     class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Status Ketersediaan Toko:</label>
+              <select x-model="formLaptop.status" class="w-full border border-slate-300 rounded-xl p-2.5 font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500">
+                <option value="ready">Ready di Toko Super Komputer</option>
+                <option value="indent">Tidak Ready / Indent (Pre-Order)</option>
+              </select>
+            </div>
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Kategori Penggunaan:</label>
+              <input type="text" x-model="formLaptop.kategori_penggunaan" placeholder="Gaming / Desain Grafis / Mahasiswa / Office" 
+                     class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+
+          <!-- Parameter Nilai Kriteria C1 - C8 -->
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Parameter Nilai 8 Kriteria (TOPSIS)</span>
+              <span class="text-[11px] text-slate-400">Pastikan angka valid</span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">Harga Rp (C1 Cost):</label>
+                <input type="number" x-model.number="formLaptop.harga" required min="100000" placeholder="12500000" class="w-full border border-slate-300 rounded-lg p-2 font-mono">
+              </div>
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">CPU Score (C2):</label>
+                <input type="number" x-model.number="formLaptop.cpu_score" min="1" max="100" required placeholder="85" class="w-full border border-slate-300 rounded-lg p-2 font-mono">
+              </div>
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">RAM GB (C3):</label>
+                <input type="number" x-model.number="formLaptop.ram_gb" min="1" max="128" required placeholder="16" class="w-full border border-slate-300 rounded-lg p-2 font-mono">
+              </div>
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">SSD GB (C4):</label>
+                <input type="number" x-model.number="formLaptop.ssd_gb" min="64" max="4096" required placeholder="512" class="w-full border border-slate-300 rounded-lg p-2 font-mono">
+              </div>
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">GPU Score (C5):</label>
+                <input type="number" x-model.number="formLaptop.gpu_score" min="1" max="100" required placeholder="75" class="w-full border border-slate-300 rounded-lg p-2 font-mono">
+              </div>
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">Baterai Wh (C6):</label>
+                <input type="number" x-model.number="formLaptop.baterai_wh" min="10" max="150" required placeholder="60" class="w-full border border-slate-300 rounded-lg p-2 font-mono">
+              </div>
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">Berat Kg (C7 Cost):</label>
+                <input type="number" step="0.01" x-model.number="formLaptop.berat_kg" min="0.5" max="10" required placeholder="1.45" class="w-full border border-slate-300 rounded-lg p-2 font-mono">
+              </div>
+              <div>
+                <label class="font-bold text-slate-700 block mb-1">Layar Score (C8):</label>
+                <input type="number" x-model.number="formLaptop.layar_score" min="1" max="100" required placeholder="85" class="w-full border border-slate-300 rounded-lg p-2 font-mono">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Spesifikasi Singkat / Keterangan:</label>
+            <textarea x-model="formLaptop.spesifikasi_ringkas" rows="2" placeholder="Contoh: AMD Ryzen 7 7840HS, RTX 4060, 165Hz IPS WQXGA Display..." class="w-full border border-slate-300 rounded-xl p-2.5"></textarea>
+          </div>
+
+          <!-- Submit and Cancel Buttons -->
+          <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2.5">
+            <button type="button" @click="modalInput = false" class="px-4 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-700 hover:bg-slate-100 transition">
+              Batal
+            </button>
+            <button type="submit" 
+                    :disabled="isSaving"
+                    class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold transition flex items-center space-x-1.5 shadow-sm shadow-indigo-200">
+              <template x-if="isSaving">
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              </template>
+              <span x-text="isEditMode ? 'Perbarui Data' : 'Simpan ke Supabase'"></span>
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL POPUP DETAIL MATRIKS PERHITUNGAN TOPSIS -->
+    <div x-show="modalMatriks" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm no-print" x-transition>
+      <div class="bg-white rounded-2xl max-w-5xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 overflow-y-auto max-h-[92vh]" @click.outside="modalMatriks = false">
+        
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div>
+            <h3 class="font-extrabold text-lg text-slate-900">Transparansi Perhitungan Matematis TOPSIS</h3>
+            <p class="text-xs text-slate-500">Detail matriks keputusan ternormalisasi (R), matriks terbobot (Y), dan solusi ideal (A+ / A-).</p>
+          </div>
+          <button @click="modalMatriks = false" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none p-1">&times;</button>
+        </div>
+
+        <div class="mt-4 space-y-6 text-xs" x-show="matriksData">
+          
+          <!-- Matriks Bobot ROC -->
+          <div class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
+            <h4 class="font-bold text-indigo-900 text-xs mb-2">1. Vektor Bobot Kriteria ROC ($w_j$):</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <template x-for="k in kriteriaList" :key="k.id">
+                <div class="bg-white p-2 rounded-lg border border-indigo-100 flex justify-between">
+                  <span class="font-bold text-slate-700" x-text="k.kode + ' (' + k.tipe + ')'"></span>
+                  <span class="font-mono font-bold text-indigo-600" x-text="k.bobot.toFixed(4)"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Matriks Ternormalisasi R -->
+          <div>
+            <h4 class="font-bold text-slate-900 text-xs mb-2">2. Matriks Keputusan Ternormalisasi Euclidean ($r_{ij}$):</h4>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+              <table class="w-full text-left text-xs font-mono">
+                <thead class="bg-slate-50 font-bold text-slate-700 border-b border-slate-200">
+                  <tr>
+                    <th class="p-2.5">Alternatif</th>
+                    <th class="p-2.5 text-center">r(C1)</th>
+                    <th class="p-2.5 text-center">r(C2)</th>
+                    <th class="p-2.5 text-center">r(C3)</th>
+                    <th class="p-2.5 text-center">r(C4)</th>
+                    <th class="p-2.5 text-center">r(C5)</th>
+                    <th class="p-2.5 text-center">r(C6)</th>
+                    <th class="p-2.5 text-center">r(C7)</th>
+                    <th class="p-2.5 text-center">r(C8)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <template x-for="row in (matriksData ? matriksData.matrixR : [])" :key="row.id">
+                    <tr class="hover:bg-slate-50">
+                      <td class="p-2.5 font-sans font-semibold text-slate-800" x-text="row.nama"></td>
+                      <td class="p-2.5 text-center" x-text="row.r1.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.r2.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.r3.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.r4.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.r5.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.r6.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.r7.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.r8.toFixed(4)"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Matriks Terbobot Y -->
+          <div>
+            <h4 class="font-bold text-slate-900 text-xs mb-2">3. Matriks Ternormalisasi Terbobot ($y_{ij} = w_j \cdot r_{ij}$):</h4>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+              <table class="w-full text-left text-xs font-mono">
+                <thead class="bg-slate-50 font-bold text-slate-700 border-b border-slate-200">
+                  <tr>
+                    <th class="p-2.5">Alternatif</th>
+                    <th class="p-2.5 text-center">y(C1)</th>
+                    <th class="p-2.5 text-center">y(C2)</th>
+                    <th class="p-2.5 text-center">y(C3)</th>
+                    <th class="p-2.5 text-center">y(C4)</th>
+                    <th class="p-2.5 text-center">y(C5)</th>
+                    <th class="p-2.5 text-center">y(C6)</th>
+                    <th class="p-2.5 text-center">y(C7)</th>
+                    <th class="p-2.5 text-center">y(C8)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <template x-for="row in (matriksData ? matriksData.matrixY : [])" :key="row.id">
+                    <tr class="hover:bg-slate-50">
+                      <td class="p-2.5 font-sans font-semibold text-slate-800" x-text="row.nama"></td>
+                      <td class="p-2.5 text-center" x-text="row.y1.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.y2.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.y3.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.y4.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.y5.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.y6.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.y7.toFixed(4)"></td>
+                      <td class="p-2.5 text-center" x-text="row.y8.toFixed(4)"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Solusi Ideal A+ & A- -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- A+ -->
+            <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+              <h4 class="font-bold text-emerald-900 text-xs mb-2">4. Solusi Ideal Positif ($A^+$):</h4>
+              <div class="grid grid-cols-4 gap-2 text-[11px] font-mono text-emerald-800">
+                <template x-if="matriksData && matriksData.APlus">
+                  <div class="space-y-1">
+                    <div>C1: <span x-text="matriksData.APlus.y1.toFixed(4)"></span></div>
+                    <div>C2: <span x-text="matriksData.APlus.y2.toFixed(4)"></span></div>
+                    <div>C3: <span x-text="matriksData.APlus.y3.toFixed(4)"></span></div>
+                    <div>C4: <span x-text="matriksData.APlus.y4.toFixed(4)"></span></div>
+                    <div>C5: <span x-text="matriksData.APlus.y5.toFixed(4)"></span></div>
+                    <div>C6: <span x-text="matriksData.APlus.y6.toFixed(4)"></span></div>
+                    <div>C7: <span x-text="matriksData.APlus.y7.toFixed(4)"></span></div>
+                    <div>C8: <span x-text="matriksData.APlus.y8.toFixed(4)"></span></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- A- -->
+            <div class="p-4 bg-rose-50 rounded-xl border border-rose-200">
+              <h4 class="font-bold text-rose-900 text-xs mb-2">5. Solusi Ideal Negatif ($A^-$):</h4>
+              <div class="grid grid-cols-4 gap-2 text-[11px] font-mono text-rose-800">
+                <template x-if="matriksData && matriksData.AMinus">
+                  <div class="space-y-1">
+                    <div>C1: <span x-text="matriksData.AMinus.y1.toFixed(4)"></span></div>
+                    <div>C2: <span x-text="matriksData.AMinus.y2.toFixed(4)"></span></div>
+                    <div>C3: <span x-text="matriksData.AMinus.y3.toFixed(4)"></span></div>
+                    <div>C4: <span x-text="matriksData.AMinus.y4.toFixed(4)"></span></div>
+                    <div>C5: <span x-text="matriksData.AMinus.y5.toFixed(4)"></span></div>
+                    <div>C6: <span x-text="matriksData.AMinus.y6.toFixed(4)"></span></div>
+                    <div>C7: <span x-text="matriksData.AMinus.y7.toFixed(4)"></span></div>
+                    <div>C8: <span x-text="matriksData.AMinus.y8.toFixed(4)"></span></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+          <button @click="modalMatriks = false" class="px-5 py-2 rounded-xl bg-slate-800 text-white font-bold text-xs hover:bg-slate-900 transition">
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200/80 py-6 text-center text-xs text-slate-500 no-print">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>&copy; <span x-text="new Date().getFullYear()"></span> <strong>Toko Super Komputer</strong>. Hak Cipta Dilindungi.</p>
+      <p class="text-slate-400">Metode ROC & TOPSIS &bull; Supabase Database PostgreSQL</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPT LOGIC ENGINE (SUPABASE + ROC + TOPSIS + OFFLINE STORAGE) -->
+  <script>
+    // KREDENSIAL RESMI SUPABASE
+    const SUPABASE_URL = "https://jaizwaoqbqykvyvdxjyj.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_l9p5lowmhr4nK9-JD7B93w_tfhrTtRB";
+    
+    let supabaseClient = null;
+    try {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch(e) {
+      console.warn("Supabase client init error, using local mode:", e);
+    }
+
+    // DATA CONTOH SEED DEFAULT
+    const SEED_LAPTOPS = [
+      {
+        nama: "Lenovo Legion 5 Slim 16IRH8",
+        merek: "Lenovo",
+        status: "ready",
+        kategori_penggunaan: "Gaming / Creator",
+        harga: 18499000,
+        cpu_score: 92,
+        ram_gb: 16,
+        ssd_gb: 1024,
+        gpu_score: 88,
+        baterai_wh: 80,
+        berat_kg: 2.30,
+        layar_score: 90,
+        spesifikasi_ringkas: "Intel Core i7-13700H / RTX 4060 8GB / 16GB DDR5 / 1TB SSD / WQXGA 165Hz"
+      },
+      {
+        nama: "Asus ROG Zephyrus G14 OLED",
+        merek: "Asus",
+        status: "ready",
+        kategori_penggunaan: "Ultrabook Gaming",
+        harga: 25999000,
+        cpu_score: 95,
+        ram_gb: 32,
+        ssd_gb: 1024,
+        gpu_score: 90,
+        baterai_wh: 73,
+        berat_kg: 1.50,
+        layar_score: 98,
+        spesifikasi_ringkas: "Ryzen 9 8945HS / RTX 4070 / 32GB LPDDR5X / 3K OLED 120Hz 0.2ms"
+      },
+      {
+        nama: "Apple MacBook Air M2 13-inch",
+        merek: "Apple",
+        status: "ready",
+        kategori_penggunaan: "Office / Mahasiswa",
+        harga: 15499000,
+        cpu_score: 86,
+        ram_gb: 8,
+        ssd_gb: 256,
+        gpu_score: 72,
+        baterai_wh: 52.6,
+        berat_kg: 1.24,
+        layar_score: 92,
+        spesifikasi_ringkas: "Apple M2 8-core CPU / 8-core GPU / Liquid Retina Display / Fanless Silent"
+      },
+      {
+        nama: "Acer Swift Go 14 OLED EVO",
+        merek: "Acer",
+        status: "ready",
+        kategori_penggunaan: "Bisnis / Multitasking",
+        harga: 12999000,
+        cpu_score: 85,
+        ram_gb: 16,
+        ssd_gb: 512,
+        gpu_score: 68,
+        baterai_wh: 65,
+        berat_kg: 1.32,
+        layar_score: 94,
+        spesifikasi_ringkas: "Intel Core i5-13500H / Iris Xe / 16GB LPDDR5 / 2.8K 90Hz OLED 100% DCI-P3"
+      },
+      {
+        nama: "HP Pavilion Aero 13 Ultralight",
+        merek: "HP",
+        status: "indent",
+        kategori_penggunaan: "Mobilitas Tinggi",
+        harga: 11499000,
+        cpu_score: 82,
+        ram_gb: 16,
+        ssd_gb: 512,
+        gpu_score: 60,
+        baterai_wh: 43,
+        berat_kg: 0.98,
+        layar_score: 85,
+        spesifikasi_ringkas: "Ryzen 5 7535U / Radeon 660M / Super Ringan < 1Kg Magnesium Chassis"
+      },
+      {
+        nama: "Axioo Hype 5 AMD Edition",
+        merek: "Axioo",
+        status: "ready",
+        kategori_penggunaan: "Budget / Mahasiswa",
+        harga: 5199000,
+        cpu_score: 70,
+        ram_gb: 8,
+        ssd_gb: 256,
+        gpu_score: 52,
+        baterai_wh: 45,
+        berat_kg: 1.42,
+        layar_score: 75,
+        spesifikasi_ringkas: "Ryzen 5 5500U / 8GB Upgradable / 256GB NVMe / FHD IPS Display"
+      }
+    ];
+
+    function spkApp() {
+      return {
+        dbStatus: 'online', // 'online' | 'local'
+        modalInput: false,
+        modalMatriks: false,
+        isEditMode: false,
+        isSaving: false,
+        filterStatus: 'all',
+        toasts: [],
+        
+        kriteriaList: [
+          { id: 1, kode: 'C1', nama: 'Harga Beli', tipe: 'Cost', rank: 1, bobot: 0, keterangan: 'Nominal harga beli toko (makin hemat makin prioritas)' },
+          { id: 2, kode: 'C2', nama: 'Processor (CPU)', tipe: 'Benefit', rank: 2, bobot: 0, keterangan: 'Performa komputasi inti prosesor' },
+          { id: 3, kode: 'C3', nama: 'Kapasitas RAM', tipe: 'Benefit', rank: 3, bobot: 0, keterangan: 'Memori multitasking dan rendering' },
+          { id: 4, kode: 'C4', nama: 'Kapasitas SSD', tipe: 'Benefit', rank: 4, bobot: 0, keterangan: 'Kapasitas storage penyimpanan sistem' },
+          { id: 5, kode: 'C5', nama: 'Kartu Grafis (GPU)', tipe: 'Benefit', rank: 5, bobot: 0, keterangan: 'Performa visual, gaming, dan 3D rendering' },
+          { id: 6, kode: 'C6', nama: 'Daya Baterai', tipe: 'Benefit', rank: 6, bobot: 0, keterangan: 'Kapasitas baterai laptop (Wh)' },
+          { id: 7, kode: 'C7', nama: 'Portabilitas (Berat)', tipe: 'Cost', rank: 7, bobot: 0, keterangan: 'Bobot fisik laptop (makin ringan makin baik)' },
+          { id: 8, kode: 'C8', nama: 'Kualitas Layar', tipe: 'Benefit', rank: 8, bobot: 0, keterangan: 'Skor kualitas panel, warna, dan refresh rate' }
+        ],
+
+        laptopsData: [],
+        hasilRanking: [],
+        matriksData: null,
+
+        formLaptop: {
+          id: null,
+          nama: '',
+          merek: '',
+          status: 'ready',
+          kategori_penggunaan: 'Umum',
+          harga: null,
+          cpu_score: null,
+          ram_gb: null,
+          ssd_gb: null,
+          gpu_score: null,
+          baterai_wh: null,
+          berat_kg: null,
+          layar_score: null,
+          spesifikasi_ringkas: ''
+        },
+
+        async init() {
+          this.hitungBobotROC();
+          await this.loadDataLaptops();
+          if (this.laptopsData.length > 0) {
+            this.kalkulasiTOPSIS(false);
+          }
+        },
+
+        // TOAST FEEDBACK
+        showToast(message, type = 'success') {
+          const id = Date.now();
+          this.toasts.push({ id, message, type });
+          setTimeout(() => this.removeToast(id), 4000);
+        },
+        removeToast(id) {
+          this.toasts = this.toasts.filter(t => t.id !== id);
+        },
+
+        // 1. HITUNG BOBOT ROC (Rank Order Centroid)
+        // Rumus: w_i = (1/m) * sum_{k=i}^m (1/k)
+        hitungBobotROC() {
+          const m = this.kriteriaList.length;
+          
+          // Urutkan berdasarkan peringkat prioritas 1 s/d 8
+          const sorted = [...this.kriteriaList].sort((a, b) => a.rank - b.rank);
+
+          sorted.forEach((item, index) => {
+            const rankIndex = index + 1;
+            let harmonicSum = 0;
+            for (let k = rankIndex; k <= m; k++) {
+              harmonicSum += (1 / k);
+            }
+            const weight = harmonicSum / m;
+            const target = this.kriteriaList.find(k => k.id === item.id);
+            if (target) target.bobot = weight;
+          });
+        },
+
+        resetPrioritas() {
+          this.kriteriaList.forEach((item, i) => item.rank = i + 1);
+          this.hitungBobotROC();
+          this.showToast("Prioritas kriteria dikembalikan ke pengaturan awal.", "info");
+          this.hitungUlangJikaAdaHasil();
+        },
+
+        // 2. BACA DATA LAPTOP DARI SUPABASE DENGAN FALLBACK LOCALSTORAGE
+        async loadDataLaptops() {
+          try {
+            if (supabaseClient) {
+              const { data, error } = await supabaseClient
+                .from('laptops')
+                .select('*')
+                .order('id', { ascending: false });
+
+              if (error) throw error;
+              
+              this.laptopsData = data || [];
+              this.dbStatus = 'online';
+              localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
+              return;
+            }
+          } catch (err) {
+            console.warn("Supabase connect error:", err.message);
+            this.dbStatus = 'local';
+          }
+
+          // Fallback Local Storage
+          const local = localStorage.getItem('spk_laptops_backup');
+          if (local) {
+            try {
+              this.laptopsData = JSON.parse(local);
+            } catch(e) {
+              this.laptopsData = [];
+            }
+          }
+        },
+
+        // 3. FORM MODAL CONTROLS
+        bukaModalTambah() {
+          this.isEditMode = false;
+          this.formLaptop = {
+            id: null,
+            nama: '',
+            merek: '',
+            status: 'ready',
+            kategori_penggunaan: 'Umum',
+            harga: null,
+            cpu_score: null,
+            ram_gb: null,
+            ssd_gb: null,
+            gpu_score: null,
+            baterai_wh: null,
+            berat_kg: null,
+            layar_score: null,
+            spesifikasi_ringkas: ''
+          };
+          this.modalInput = true;
+        },
+
+        bukaModalEdit(laptop) {
+          this.isEditMode = true;
+          this.formLaptop = { ...laptop };
+          this.modalInput = true;
+        },
+
+        // 4. SIMPAN DATA LAPTOP (CREATE & UPDATE)
+        async simpanLaptop() {
+          this.isSaving = true;
+          const payload = {
+            nama: this.formLaptop.nama,
+            merek: this.formLaptop.merek,
+            status: this.formLaptop.status,
+            kategori_penggunaan: this.formLaptop.kategori_penggunaan || 'Umum',
+            harga: Number(this.formLaptop.harga),
+            cpu_score: Number(this.formLaptop.cpu_score),
+            ram_gb: Number(this.formLaptop.ram_gb),
+            ssd_gb: Number(this.formLaptop.ssd_gb),
+            gpu_score: Number(this.formLaptop.gpu_score),
+            baterai_wh: Number(this.formLaptop.baterai_wh),
+            berat_kg: Number(this.formLaptop.berat_kg),
+            layar_score: Number(this.formLaptop.layar_score),
+            spesifikasi_ringkas: this.formLaptop.spesifikasi_ringkas || ''
+          };
+
+          let success = false;
+
+          try {
+            if (this.dbStatus === 'online' && supabaseClient) {
+              if (this.isEditMode && this.formLaptop.id) {
+                const { error } = await supabaseClient
+                  .from('laptops')
+                  .update(payload)
+                  .eq('id', this.formLaptop.id);
+                if (error) throw error;
+              } else {
+                const { error } = await supabaseClient
+                  .from('laptops')
+                  .insert([payload]);
+                if (error) throw error;
+              }
+              success = true;
+            }
+          } catch (err) {
+            console.error("Gagal simpan ke Supabase:", err.message);
+            this.showToast("Gagal sinkronisasi Supabase, menyimpan ke cache lokal: " + err.message, "error");
+          }
+
+          // Local state management
+          if (this.isEditMode && this.formLaptop.id) {
+            const index = this.laptopsData.findIndex(l => l.id === this.formLaptop.id);
+            if (index !== -1) {
+              this.laptopsData[index] = { ...this.formLaptop, ...payload };
+            }
+            this.showToast("Data laptop '" + payload.nama + "' berhasil diperbarui!");
+          } else {
+            const newId = Date.now();
+            const newItem = { id: newId, ...payload };
+            this.laptopsData.unshift(newItem);
+            this.showToast("Laptop '" + payload.nama + "' berhasil ditambahkan!");
+          }
+
+          localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
+          this.modalInput = false;
+          this.isSaving = false;
+
+          if (this.dbStatus === 'online') {
+            await this.loadDataLaptops();
+          }
+
+          if (this.laptopsData.length > 0) {
+            this.kalkulasiTOPSIS(false);
+          }
+        },
+
+        // 5. HAPUS LAPTOP
+        async hapusLaptop(id, nama) {
+          if (!confirm(`Apakah Anda yakin ingin menghapus data laptop "${nama}"?`)) return;
+
+          try {
+            if (this.dbStatus === 'online' && supabaseClient) {
+              const { error } = await supabaseClient.from('laptops').delete().eq('id', id);
+              if (error) throw error;
+            }
+          } catch (err) {
+            console.warn("Hapus Supabase error:", err.message);
+          }
+
+          this.laptopsData = this.laptopsData.filter(l => l.id !== id);
+          localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
+          this.showToast(`Laptop "${nama}" berhasil dihapus.`, "info");
+          
+          if (this.laptopsData.length > 0) {
+            this.kalkulasiTOPSIS(false);
+          } else {
+            this.hasilRanking = [];
+          }
+        },
+
+        // 6. SEED DEMO DATA
+        async seedDataContoh() {
+          if (this.laptopsData.length > 0) {
+            if (!confirm("Tambahkan data demo contoh ke daftar laptop yang ada?")) return;
+          }
+
+          let insertedCount = 0;
+          for (const item of SEED_LAPTOPS) {
+            try {
+              if (this.dbStatus === 'online' && supabaseClient) {
+                await supabaseClient.from('laptops').insert([item]);
+              }
+            } catch(e) {}
+            
+            this.laptopsData.push({ id: Date.now() + Math.floor(Math.random()*1000), ...item });
+            insertedCount++;
+          }
+
+          localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
+          this.showToast(`${insertedCount} data laptop demo berhasil dimuat!`);
+          
+          if (this.dbStatus === 'online') {
+            await this.loadDataLaptops();
+          }
+
+          this.kalkulasiTOPSIS(true);
+        },
+
+        hitungUlangJikaAdaHasil() {
+          if (this.hasilRanking.length > 0) {
+            this.kalkulasiTOPSIS(false);
+          }
+        },
+
+        // 7. KOMPUTASI ALGORITMA TOPSIS
+        kalkulasiTOPSIS(scroll = true) {
+          this.hitungBobotROC();
+
+          let dataset = [...this.laptopsData];
+          if (this.filterStatus !== 'all') {
+            dataset = dataset.filter(l => l.status === this.filterStatus);
+          }
+
+          if (dataset.length === 0) {
+            this.showToast("Tidak ada laptop pada filter ini untuk dikalkulasi.", "error");
+            this.hasilRanking = [];
+            return;
+          }
+
+          const bobot = {};
+          this.kriteriaList.forEach(k => bobot[k.kode] = k.bobot);
+
+          // A. Pembagi Kuadrat Euclidean
+          const pembagi = {
+            c1: Math.sqrt(dataset.reduce((s, d) => s + Math.pow(Number(d.harga), 2), 0)) || 1,
+            c2: Math.sqrt(dataset.reduce((s, d) => s + Math.pow(Number(d.cpu_score), 2), 0)) || 1,
+            c3: Math.sqrt(dataset.reduce((s, d) => s + Math.pow(Number(d.ram_gb), 2), 0)) || 1,
+            c4: Math.sqrt(dataset.reduce((s, d) => s + Math.pow(Number(d.ssd_gb), 2), 0)) || 1,
+            c5: Math.sqrt(dataset.reduce((s, d) => s + Math.pow(Number(d.gpu_score), 2), 0)) || 1,
+            c6: Math.sqrt(dataset.reduce((s, d) => s + Math.pow(Number(d.baterai_wh), 2), 0)) || 1,
+            c7: Math.sqrt(dataset.reduce((s, d) => s + Math.pow(Number(d.berat_kg), 2), 0)) || 1,
+            c8: Math.sqrt(dataset.reduce((s, d) => s + Math.pow(Number(d.layar_score), 2), 0)) || 1,
+          };
+
+          // B. Normalisasi Matrix R
+          const matrixR = dataset.map(d => ({
+            id: d.id,
+            nama: d.nama,
+            r1: Number(d.harga) / pembagi.c1,
+            r2: Number(d.cpu_score) / pembagi.c2,
+            r3: Number(d.ram_gb) / pembagi.c3,
+            r4: Number(d.ssd_gb) / pembagi.c4,
+            r5: Number(d.gpu_score) / pembagi.c5,
+            r6: Number(d.baterai_wh) / pembagi.c6,
+            r7: Number(d.berat_kg) / pembagi.c7,
+            r8: Number(d.layar_score) / pembagi.c8,
+          }));
+
+          // C. Normalisasi Terbobot (Matrix Y)
+          const matrixY = dataset.map(d => {
+            const r = matrixR.find(item => item.id === d.id);
+            return {
+              id: d.id,
+              nama: d.nama,
+              y1: r.r1 * bobot.C1,
+              y2: r.r2 * bobot.C2,
+              y3: r.r3 * bobot.C3,
+              y4: r.r4 * bobot.C4,
+              y5: r.r5 * bobot.C5,
+              y6: r.r6 * bobot.C6,
+              y7: r.r7 * bobot.C7,
+              y8: r.r8 * bobot.C8,
+            };
+          });
+
+          // D. Solusi Ideal Positif (A+) dan Solusi Ideal Negatif (A-)
+          // C1 (Cost) -> min ideal +, max ideal -
+          // C7 (Cost) -> min ideal +, max ideal -
+          // C2..C6, C8 (Benefit) -> max ideal +, min ideal -
+          const APlus = {
+            y1: Math.min(...matrixY.map(m => m.y1)),
+            y2: Math.max(...matrixY.map(m => m.y2)),
+            y3: Math.max(...matrixY.map(m => m.y3)),
+            y4: Math.max(...matrixY.map(m => m.y4)),
+            y5: Math.max(...matrixY.map(m => m.y5)),
+            y6: Math.max(...matrixY.map(m => m.y6)),
+            y7: Math.min(...matrixY.map(m => m.y7)),
+            y8: Math.max(...matrixY.map(m => m.y8))
+          };
+
+          const AMinus = {
+            y1: Math.max(...matrixY.map(m => m.y1)),
+            y2: Math.min(...matrixY.map(m => m.y2)),
+            y3: Math.min(...matrixY.map(m => m.y3)),
+            y4: Math.min(...matrixY.map(m => m.y4)),
+            y5: Math.min(...matrixY.map(m => m.y5)),
+            y6: Math.min(...matrixY.map(m => m.y6)),
+            y7: Math.max(...matrixY.map(m => m.y7)),
+            y8: Math.min(...matrixY.map(m => m.y8))
+          };
+
+          // E. Jarak Euclidean (D+, D-) dan Nilai Preferensi (Vi)
+          const hasil = dataset.map(d => {
+            const y = matrixY.find(m => m.id === d.id);
+
+            const dPlus = Math.sqrt(
+              Math.pow(y.y1 - APlus.y1, 2) + Math.pow(y.y2 - APlus.y2, 2) +
+              Math.pow(y.y3 - APlus.y3, 2) + Math.pow(y.y4 - APlus.y4, 2) +
+              Math.pow(y.y5 - APlus.y5, 2) + Math.pow(y.y6 - APlus.y6, 2) +
+              Math.pow(y.y7 - APlus.y7, 2) + Math.pow(y.y8 - APlus.y8, 2)
+            );
+
+            const dMinus = Math.sqrt(
+              Math.pow(y.y1 - AMinus.y1, 2) + Math.pow(y.y2 - AMinus.y2, 2) +
+              Math.pow(y.y3 - AMinus.y3, 2) + Math.pow(y.y4 - AMinus.y4, 2) +
+              Math.pow(y.y5 - AMinus.y5, 2) + Math.pow(y.y6 - AMinus.y6, 2) +
+              Math.pow(y.y7 - AMinus.y7, 2) + Math.pow(y.y8 - AMinus.y8, 2)
+            );
+
+            const skorVi = (dPlus + dMinus) === 0 ? 0 : (dMinus / (dPlus + dMinus));
+
+            return {
+              ...d,
+              dPlus,
+              dMinus,
+              skorVi
+            };
+          });
+
+          // Urutkan alternatif berdasarkan nilai Vi tertinggi (Descending)
+          this.hasilRanking = hasil.sort((a, b) => b.skorVi - a.skorVi);
+
+          // Simpan data kalkulasi untuk modal matriks
+          this.matriksData = {
+            matrixR,
+            matrixY,
+            APlus,
+            AMinus
+          };
+
+          if (scroll) {
+            this.showToast("Kalkulasi TOPSIS selesai dievaluasi!");
+            setTimeout(() => {
+              const el = document.getElementById('hasilSection');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }
+        },
+
+        // 8. EKSPOR KE CSV
+        exportCSV() {
+          if (this.hasilRanking.length === 0) return;
+          
+          let csv = "Rank,Nama Laptop,Merek,Status,Kategori,Harga (Rp),CPU Score,RAM (GB),SSD (GB),GPU Score,Baterai (Wh),Berat (Kg),Layar Score,D Plus,D Minus,Skor Vi\n";
+          
+          this.hasilRanking.forEach((item, index) => {
+            csv += `${index + 1},"${item.nama.replace(/"/g, '""')}","${item.merek}","${item.status}","${item.kategori_penggunaan || 'Umum'}",${item.harga},${item.cpu_score},${item.ram_gb},${item.ssd_gb},${item.gpu_score},${item.baterai_wh},${item.berat_kg},${item.layar_score},${item.dPlus.toFixed(4)},${item.dMinus.toFixed(4)},${item.skorVi.toFixed(4)}\n`;
+          });
+
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.setAttribute("href", url);
+          link.setAttribute("download", `Hasil_Rekomendasi_Laptop_SPK_${new Date().toISOString().slice(0,10)}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          this.showToast("Data hasil rekomendasi berhasil diekspor ke file CSV!");
+        }
+      };
+    }
+  </script>
+</body>
+</html>

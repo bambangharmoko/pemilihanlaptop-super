@@ -241,7 +241,7 @@
             <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">1</span>
             <h2 class="text-base sm:text-lg font-bold text-slate-900">Atur Prioritas Kriteria Kepentingan (ROC)</h2>
           </div>
-          <p class="text-xs text-slate-500 mt-1 pl-8">Ubah urutan peringkat prioritas (1 = Terpenting, 8 = Terendah). Bobot dan perankingan diperbarui otomatis secara real-time.</p>
+          <p class="text-xs text-slate-500 mt-1 pl-8">Ubah urutan peringkat prioritas (1 = Terpenting, 8 = Terendah). Tekan tombol "Kalkulasi Rekomendasi TOPSIS" untuk memproses hasil.</p>
         </div>
         <div class="flex items-center space-x-2 self-start sm:self-auto pl-8 sm:pl-0">
           <button @click="resetPrioritas()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50/60 hover:bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 transition flex items-center space-x-1">
@@ -348,7 +348,22 @@
       </div>
     </section>
 
-    <!-- 2. HASIL PERANKINGAN TOPSIS -->
+    <!-- STATE PROMPT SEBELUM KLIK TOMBOL KALKULASI -->
+    <section x-show="hasilRanking.length === 0 && laptopsData.length > 0" class="bg-indigo-50/50 rounded-2xl p-6 sm:p-8 border border-indigo-100 text-center mb-8 no-print" x-transition>
+      <div class="max-w-md mx-auto">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-indigo-200">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+        </div>
+        <h3 class="text-sm sm:text-base font-bold text-slate-800">Siap Menghitung Rekomendasi</h3>
+        <p class="text-xs text-slate-500 mt-1 mb-4">Urutan prioritas kriteria telah disesuaikan. Klik tombol di bawah untuk memproses perankingan rekomendasi laptop dengan metode TOPSIS.</p>
+        <button @click="kalkulasiTOPSIS(true)" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-indigo-200 hover:shadow-indigo-300 transition flex items-center space-x-2 mx-auto">
+          <svg class="w-4 h-4 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          <span>Kalkulasi Rekomendasi TOPSIS Sekarang</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. HASIL PERANKINGAN TOPSIS (HANYA MUNCUL SETELAH TOMBOL DIKLIK) -->
     <section id="hasilSection" class="mb-10" x-show="hasilRanking.length > 0" x-transition>
       
       <!-- Section Title & Toolbars -->
@@ -795,13 +810,7 @@
             <h3 class="font-extrabold text-lg text-slate-900">Transparansi Perhitungan Matematis TOPSIS</h3>
             <p class="text-xs text-slate-500">Detail matriks keputusan ternormalisasi (R), matriks terbobot (Y), dan solusi ideal (A+ / A-).</p>
           </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full flex items-center space-x-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Sync Real-Time Bobot ROC</span>
-            </span>
-            <button @click="modalMatriks = false" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none p-1">&times;</button>
-          </div>
+          <button @click="modalMatriks = false" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none p-1">&times;</button>
         </div>
 
         <div class="mt-4 space-y-6 text-xs" x-show="matriksData">
@@ -869,7 +878,6 @@
           <div>
             <div class="flex items-center justify-between mb-2">
               <h4 class="font-bold text-slate-900 text-xs">3. Matriks Ternormalisasi Terbobot ($y_{ij} = w_j \cdot r_{ij}$):</h4>
-              <span class="text-[11px] text-slate-500 italic">Otomatis berubah mengikuti perubahan bobot ROC</span>
             </div>
             <div class="overflow-x-auto border border-slate-200 rounded-xl">
               <table class="w-full text-left text-xs font-mono">

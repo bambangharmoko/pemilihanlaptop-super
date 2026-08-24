@@ -1,8 +1,10 @@
 /**
  * APP ENGINE - Toko Super Komputer
  * Logika Aplikasi SPK 10 Kriteria (C1 - C10):
- * - Database Koleksi 52 Model Laptop Paling Viral & Hits 2 Tahun Terakhir di Pasar Indonesia
- * - Injeksi Demo Data Bertahap Cerdas (Non-Repeating Smart Batch Ingestion ke Supabase Cloud)
+ * - Koleksi 52 Model Laptop Hits & Viral di Indonesia (2024 - 2026)
+ * - Injeksi Demo Stock Laptop Bertahap (Kelipatan 5 Model per Klik dengan Anti-Duplikasi)
+ * - Multi-Select Checkbox & Fitur Hapus Massal (Bulk Delete) Cepat
+ * - Custom Modal Alert / Konfirmasi Cantik (Menggantikan confirm browser standar)
  * - Alpine.js Reactive Store
  * - Metode Pembobotan Rank Order Centroid (ROC) 10 Kriteria dengan Penanganan Tied-Rank
  * - Algoritma TOPSIS 10 Dimensi (Cost/Benefit Solusi Ideal A+/A-, Jarak Euclidean D+/D-, Skor Vi)
@@ -976,6 +978,22 @@ function spkApp() {
     hasCalculated: false,
     sqlScriptText: window.SupabaseService ? window.SupabaseService.SQL_SCHEMA : '',
     
+    // Fitur Seleksi Banyak Laptop (Bulk Actions)
+    selectedLaptopIds: [],
+
+    // State Modal Dialog Konfirmasi Cantik (Ganti confirm bawaan browser)
+    confirmModal: {
+      show: false,
+      title: '',
+      message: '',
+      subMessage: '',
+      items: [],
+      confirmText: 'Konfirmasi',
+      cancelText: 'Batal',
+      type: 'primary', // 'primary' | 'danger' | 'warning'
+      action: null
+    },
+
     // Master 10 Kriteria Keputusan dengan data rank tersimpan
     kriteriaList: getInitialKriteriaList(),
 
@@ -1040,6 +1058,53 @@ function spkApp() {
       this.copiedSql = true;
       this.showToast("Script SQL DDL 10 Kriteria berhasil disalin! Jalankan di SQL Editor Supabase.", "success");
       setTimeout(() => this.copiedSql = false, 3000);
+    },
+
+    // KONTROL CUSTOM MODAL KONFIRMASI MODERN
+    openConfirm({ title, message, subMessage = '', items = [], confirmText = 'Konfirmasi', cancelText = 'Batal', type = 'primary', action }) {
+      this.confirmModal = {
+        show: true,
+        title,
+        message,
+        subMessage,
+        items,
+        confirmText,
+        cancelText,
+        type,
+        action
+      };
+    },
+    closeConfirm() {
+      this.confirmModal.show = false;
+    },
+    executeConfirmAction() {
+      if (typeof this.confirmModal.action === 'function') {
+        this.confirmModal.action();
+      }
+      this.closeConfirm();
+    },
+
+    // KONTROL SELEKSI BANYAK LAPTOP (BULK ACTIONS)
+    toggleSelectAll() {
+      if (this.selectedLaptopIds.length === this.laptopsData.length) {
+        this.selectedLaptopIds = [];
+      } else {
+        this.selectedLaptopIds = this.laptopsData.map(l => l.id);
+      }
+    },
+    toggleSelectLaptop(id) {
+      const numericId = id;
+      if (this.selectedLaptopIds.includes(numericId)) {
+        this.selectedLaptopIds = this.selectedLaptopIds.filter(i => i !== numericId);
+      } else {
+        this.selectedLaptopIds.push(numericId);
+      }
+    },
+    isSelected(id) {
+      return this.selectedLaptopIds.includes(id);
+    },
+    deselectAll() {
+      this.selectedLaptopIds = [];
     },
 
     // Helper Keterangan Garansi C9
@@ -1194,8 +1259,8 @@ function spkApp() {
         baterai_wh: null,
         berat_kg: null,
         layar_score: null,
-        garansi_score: 3,
-        upgrade_score: 3,
+        garansi_score: 3, // Default 2 Thn Resmi
+        upgrade_score: 3, // Default 1 Slot RAM + 1 M.2 SSD
         spesifikasi_ringkas: ''
       };
       this.modalInput = true;
@@ -1271,23 +1336,66 @@ function spkApp() {
       this.isSaving = false;
     },
 
-    // 5. HAPUS LAPTOP
-    async hapusLaptop(id, nama) {
-      if (!confirm(`Apakah Anda yakin ingin menghapus data laptop "${nama}"?`)) return;
-
-      const res = await window.SupabaseService.deleteLaptop(id);
-      if (res && !res.error) {
-        this.showToast(`Laptop "${nama}" berhasil dihapus dari Supabase Cloud!`, "info");
-        await this.loadDataLaptops(false);
-      } else {
-        this.laptopsData = this.laptopsData.filter(l => l.id !== id);
-        localStorage.setItem('spk_laptops_backup_10', JSON.stringify(this.laptopsData));
-        this.showToast(`Laptop "${nama}" berhasil dihapus dari cache lokal.`, "info");
-      }
+    // 5. HAPUS LAPTOP TUNGGAL (DENGAN CUSTOM CONFIRM MODAL CANTIK)
+    hapusLaptop(id, nama) {
+      this.openConfirm({
+        title: 'Hapus Data Laptop',
+        message: 'Apakah Anda yakin ingin menghapus data laptop ini dari database?',
+        items: [nama],
+        subMessage: 'Data yang dihapus dari Supabase Cloud tidak dapat dipulihkan kembali.',
+        confirmText: 'Ya, Hapus Data',
+        cancelText: 'Batal',
+        type: 'danger',
+        action: async () => {
+          const res = await window.SupabaseService.deleteLaptop(id);
+          if (res && !res.error) {
+            this.showToast(`Laptop "${nama}" berhasil dihapus dari Supabase Cloud!`, "info");
+            this.selectedLaptopIds = this.selectedLaptopIds.filter(item => item !== id);
+            await this.loadDataLaptops(false);
+          } else {
+            this.laptopsData = this.laptopsData.filter(l => l.id !== id);
+            this.selectedLaptopIds = this.selectedLaptopIds.filter(item => item !== id);
+            localStorage.setItem('spk_laptops_backup_10', JSON.stringify(this.laptopsData));
+            this.showToast(`Laptop "${nama}" berhasil dihapus dari cache lokal.`, "info");
+          }
+        }
+      });
     },
 
-    // 6. FITUR INJEKSI DEMO DATA LAPTOP VIRAL (52 MODEL KOLEKSI RESMI DENGAN ANTI-DUPLIKASI)
-    async seedDataContoh() {
+    // 6. HAPUS BANYAK LAPTOP SEKALIGUS (BULK DELETE MASSAL)
+    hapusSelectedLaptops() {
+      if (this.selectedLaptopIds.length === 0) return;
+      const count = this.selectedLaptopIds.length;
+      const selectedLaptops = this.laptopsData.filter(l => this.selectedLaptopIds.includes(l.id));
+      const selectedNames = selectedLaptops.map(l => `${l.nama} (${l.merek})`);
+
+      this.openConfirm({
+        title: `Hapus ${count} Laptop Terpilih Sekaligus`,
+        message: `Apakah Anda yakin ingin menghapus secara massal ${count} laptop yang dipilih?`,
+        items: selectedNames,
+        subMessage: `Tindakan ini akan menghapus ${count} record dari PostgreSQL Supabase Cloud secara permanen.`,
+        confirmText: `Hapus ${count} Laptop`,
+        cancelText: 'Batal',
+        type: 'danger',
+        action: async () => {
+          const idsToDelete = [...this.selectedLaptopIds];
+          const res = await window.SupabaseService.deleteMultipleLaptops(idsToDelete);
+          if (res && !res.error) {
+            this.showToast(`✅ Berhasil menghapus ${count} data laptop dari Supabase Cloud!`, "info");
+            this.selectedLaptopIds = [];
+            await this.loadDataLaptops(false);
+          } else {
+            this.laptopsData = this.laptopsData.filter(l => !idsToDelete.includes(l.id));
+            this.selectedLaptopIds = [];
+            localStorage.setItem('spk_laptops_backup_10', JSON.stringify(this.laptopsData));
+            this.showToast(`✅ ${count} laptop berhasil dihapus dari cache lokal.`, "info");
+          }
+        }
+      });
+    },
+
+    // 7. FITUR INJEKSI "DEMO STOCK LAPTOP" (KELIPATAN 5 MODEL DENGAN CUSTOM CONFIRM MODAL)
+    seedDataContoh() {
       this.isInjectingDemo = true;
 
       // 1. Dapatkan daftar nama laptop yang sudah ada di database saat ini (case-insensitive)
@@ -1301,46 +1409,50 @@ function spkApp() {
       // 3. Jika semua 52 model laptop sudah ada di database
       if (availableUnadded.length === 0) {
         this.isInjectingDemo = false;
-        this.showToast(`ℹ️ Seluruh ${LAPTOPS_MASTER_COLLECTION.length} model laptop viral (2 tahun terakhir) telah ada di database Anda!`, "info");
+        this.showToast(`ℹ️ Seluruh ${LAPTOPS_MASTER_COLLECTION.length} model laptop hits (2 tahun terakhir) telah ada di database Anda!`, "info");
         return;
       }
 
-      // 4. Ambil batch 4 laptop baru berikutnya setiap kali tombol ditekan
-      const BATCH_SIZE = 4;
+      // 4. Ambil batch kelipatan 5 model baru berikutnya
+      const BATCH_SIZE = 5;
       const nextBatch = availableUnadded.slice(0, BATCH_SIZE);
       const remainingAfterThis = availableUnadded.length - nextBatch.length;
 
-      const batchNames = nextBatch.map(b => b.nama).join(', ');
-      if (this.laptopsData.length > 0) {
-        const confirmed = confirm(`Tersedia ${availableUnadded.length} varian laptop viral baru.\n\nApakah Anda ingin menambahkan ${nextBatch.length} model baru berikut ke database?\n\n• ${nextBatch.map(b => b.nama + ' (Rp ' + Number(b.harga).toLocaleString('id-ID') + ')').join('\n• ')}`);
-        if (!confirmed) {
-          this.isInjectingDemo = false;
-          return;
-        }
-      }
+      const batchItemSummaries = nextBatch.map(b => `${b.nama} • Rp ${Number(b.harga).toLocaleString('id-ID')} (${b.merek})`);
 
-      // 5. Simpan ke Supabase Cloud (Bulk Insert)
-      const res = await window.SupabaseService.seedLaptops(nextBatch);
-      if (res && !res.error) {
-        this.dbStatus = 'online';
-        this.showToast(`✅ Berhasil menambahkan ${nextBatch.length} laptop baru: ${batchNames}. (Tersisa ${remainingAfterThis} model di koleksi)`, "success");
-        await this.loadDataLaptops(false);
-      } else {
-        if (res?.isTableMissing) {
-          this.dbStatus = 'table_missing';
-          this.modalSql = true;
+      this.openConfirm({
+        title: 'Tambahkan Demo Stock Laptop',
+        message: `Tersedia ${availableUnadded.length} varian laptop viral. Tambahkan ${nextBatch.length} model baru berikut ke database?`,
+        items: batchItemSummaries,
+        subMessage: `Setelah ditambahkan, tersisa ${remainingAfterThis} varian model baru di koleksi demo.`,
+        confirmText: `+ Tambahkan ${nextBatch.length} Laptop`,
+        cancelText: 'Batal',
+        type: 'primary',
+        action: async () => {
+          const res = await window.SupabaseService.seedLaptops(nextBatch);
+          if (res && !res.error) {
+            this.dbStatus = 'online';
+            this.showToast(`✅ Berhasil menambahkan ${nextBatch.length} laptop baru ke Supabase Cloud! (Tersisa ${remainingAfterThis} model di koleksi)`, "success");
+            await this.loadDataLaptops(false);
+          } else {
+            if (res?.isTableMissing) {
+              this.dbStatus = 'table_missing';
+              this.modalSql = true;
+            }
+            for (const item of nextBatch) {
+              this.laptopsData.push({ id: Date.now() + Math.floor(Math.random()*10000), ...item });
+            }
+            localStorage.setItem('spk_laptops_backup_10', JSON.stringify(this.laptopsData));
+            this.showToast(`✅ ${nextBatch.length} laptop baru dimuat ke database: ${nextBatch.map(b=>b.nama).join(', ')}.`, "info");
+          }
+          this.isInjectingDemo = false;
         }
-        for (const item of nextBatch) {
-          this.laptopsData.push({ id: Date.now() + Math.floor(Math.random()*10000), ...item });
-        }
-        localStorage.setItem('spk_laptops_backup_10', JSON.stringify(this.laptopsData));
-        this.showToast(`✅ ${nextBatch.length} laptop baru dimuat ke database: ${batchNames}.`, "info");
-      }
+      });
 
       this.isInjectingDemo = false;
     },
 
-    // 7. KOMPUTASI ALGORITMA TOPSIS 10 DIMENSI (C1 - C10)
+    // 8. KOMPUTASI ALGORITMA TOPSIS 10 DIMENSI (C1 - C10)
     kalkulasiTOPSIS(scroll = true) {
       // 1. Pastikan bobot ROC dihitung dari rank 10 kriteria saat ini
       this.hitungBobotROC();
@@ -1493,7 +1605,7 @@ function spkApp() {
       }
     },
 
-    // 8. EKSPOR KE CSV (Lengkap 10 Kriteria)
+    // 9. EKSPOR KE CSV (Lengkap 10 Kriteria)
     exportCSV() {
       if (this.hasilRanking.length === 0) return;
       

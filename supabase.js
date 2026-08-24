@@ -234,6 +234,31 @@ ON CONFLICT (kode) DO UPDATE SET
   },
 
   /**
+   * Hapus banyak laptop sekaligus (Bulk Delete) berdasarkan daftar ID
+   * @param {Array<number|string>} ids 
+   * @returns {Promise<{error: any, isTableMissing: boolean}>}
+   */
+  async deleteMultipleLaptops(ids) {
+    if (!supabaseClient) {
+      return { error: new Error('Supabase client belum terpasang'), isTableMissing: false };
+    }
+
+    try {
+      const { error } = await supabaseClient
+        .from('laptops')
+        .delete()
+        .in('id', ids);
+
+      if (error) {
+        return { error, isTableMissing: this.isTableMissingError(error) };
+      }
+      return { error: null, isTableMissing: false };
+    } catch (err) {
+      return { error: err, isTableMissing: this.isTableMissingError(err) };
+    }
+  },
+
+  /**
    * Bulk insert data contoh / seed demo
    * @param {Array} laptopsArray 
    * @returns {Promise<{data: any, error: any, isTableMissing: boolean}>}

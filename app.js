@@ -992,7 +992,7 @@ function spkApp() {
     toasts: [],
     lastCalculatedAt: null,
     hasCalculated: false,
-    sqlScriptText: window.SupabaseService ? window.SupabaseService.SQL_SCHEMA : '',
+    sqlScriptText: (typeof window !== 'undefined' && window.SupabaseService) ? window.SupabaseService.SQL_SCHEMA : '',
     
     // Fitur Seleksi Banyak Laptop (Bulk Actions)
     selectedLaptopIds: [],
@@ -1732,4 +1732,11 @@ function spkApp() {
       this.showToast("Data hasil rekomendasi (10 Kriteria) berhasil diekspor ke file CSV!");
     }
   };
+}
+
+if (typeof window !== 'undefined') {
+  window.spkApp = spkApp;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { spkApp };
 }

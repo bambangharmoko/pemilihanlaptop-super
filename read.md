@@ -1,23 +1,36 @@
 # Laporan Teknis & Panduan Skripsi Sistem Pendukung Keputusan (SPK) Laptop
-## Judul Skripsi: "Sistem Pendukung Keputusan Pemilihan Laptop pada Customer Toko Super Komputer Menggunakan Kombinasi Metode Rank Order Centroid (ROC) dan TOPSIS Berbasis Web"
+## Judul Skripsi: "Sistem Pendukung Keputusan Pemilihan Laptop pada Customer Toko Super Komputer Menggunakan Kombinasi Metode Multi-Kriteria (ROC, Shannon Entropy, LOPCOW) dan TOPSIS Berbasis Web"
 
 ---
 
 ## 1. Informasi & Spesifikasi Proyek
 * **Studi Kasus:** Toko Super Komputer (Layanan Konsultasi & Rekomendasi Pelanggan)
-* **Kombinasi Metode:** 
-  1. **Rank Order Centroid (ROC):** Pembobotan objektif deret harmonik untuk 10 kriteria keputusan ($m=10$) dengan penanganan *tied-rank*.
-  2. **TOPSIS (Technique for Order Preference by Similarity to Ideal Solution):** Perangkingan multi-kriteria berbasis kedekatan geometris terhadap Solusi Ideal Positif ($A^+$) dan Solusi Ideal Negatif ($A^-$).
+* **Arsitektur Sistem:** Multi-Method SPK Gateway Portal
+* **3 Pilihan Kombinasi Metode Pembobotan:**
+  1. **Rank Order Centroid (ROC) + TOPSIS (URL: `/roc`)**: Pembobotan preferensi ordinal kebutuhan pelanggan (Subjektif / Konsultatif).
+  2. **Shannon Entropy + TOPSIS (URL: `/entropy`)**: Pembobotan objektif statistik berdasarkan derajat diversifikasi data ($E_j$).
+  3. **LOPCOW + TOPSIS (URL: `/lopcow`)**: *Logarithmic Percentage Change-driven Objective Weighting* (Objektif Modern Non-Linier).
 * **Database Cloud:** PostgreSQL via **Supabase Cloud** (Real-time CRUD & Persistensi Multi-Device)
-* **Deployment & Hosting:** **Vercel Web Platform**
+* **Deployment & Hosting:** **Vercel Web Platform** (`https://pemilihanlaptop-superkomputer.vercel.app`)
 * **Repository GitHub:** `https://github.com/bambangharmoko/pemilihanlaptop-super.git`
-* **Arsitektur Front-End:** Modular Static Web App (`index.html`, `style.css`, `supabase.js`, `app.js`)
+* **Arsitektur Front-End:** Modular Static Web App (`index.html`, `roc.html`, `entropy.html`, `lopcow.html`, `style.css`, `supabase.js`, `app.js`, `app_entropy.js`, `app_lopcow.js`)
 
 ---
 
-## 2. Definisi Matriks 10 Kriteria Keputusan (C1 – C10)
+## 2. Struktur Rute Halaman Web (Vercel Routing)
 
-| Kode | Nama Kriteria | Tipe | Satuan | Skala Nilai | Default Rank | Bobot Default ROC ($w_j$) |
+| URL Endpoint | File HTML | Modul JS | Deskripsi Halaman |
+| :--- | :--- | :--- | :--- |
+| `/` | `index.html` | - | **Gateway Portal / Landing Page:** Pemilihan metode pembobotan SPK & komparasi teori. |
+| `/roc` | `roc.html` | `app.js` | **SPK ROC + TOPSIS:** Pembobotan subjektif rank 1-10 dengan preset kebutuhan customer & cetak lembar konsultasi. |
+| `/entropy` | `entropy.html` | `app_entropy.js` | **SPK Shannon Entropy + TOPSIS:** Pembobotan objektif dispersi informasi data. |
+| `/lopcow` | `lopcow.html` | `app_lopcow.js` | **SPK LOPCOW + TOPSIS:** Pembobotan objektif perubahan persentase kuadrat logaritmik. |
+
+---
+
+## 3. Definisi Matriks 10 Kriteria Keputusan (C1 – C10)
+
+| Kode | Nama Kriteria | Tipe | Satuan | Skala Nilai | Default Rank (ROC) | Bobot Default ROC ($w_j$) |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
 | **C1** | Harga Beli | **Cost** | Rupiah (Rp) | Nominal Rp | 1 | **29.29%** |
 | **C2** | Processor (CPU) | **Benefit** | Skor 0-100 | Benchmark Skor | 2 | **19.29%** |
@@ -47,96 +60,55 @@
 
 ---
 
-## 3. Landasan Matematis & Algoritma SPK
+## 4. Landasan Matematis 3 Metode Pembobotan
 
-### A. Metode Pembobotan Rank Order Centroid (ROC)
-Metode ROC menentukan bobot kriteria ($w_i$) dari tingkat kepentingan ordinal rank ($i=1, 2, \dots, m$) dengan rumus deret harmonik:
+### A. Metode Rank Order Centroid (ROC)
+Mengonversi pemeringkatan ordinal ($R_1 \dots R_m$) menjadi bobot kuantitatif:
 
-$$w_i = \frac{1}{m} \sum_{k=i}^{m} \frac{1}{k}$$
-
-Untuk $m = 10$:
-- $w_1 = \frac{1}{10} \left(1 + \frac{1}{2} + \frac{1}{3} + \dots + \frac{1}{10}\right) = 0.2929 \ (29.29\%)$
-- $w_2 = \frac{1}{10} \left(\frac{1}{2} + \frac{1}{3} + \dots + \frac{1}{10}\right) = 0.1929 \ (19.29\%)$
-- $w_{10} = \frac{1}{10} \left(\frac{1}{10}\right) = 0.0100 \ (1.00\%)$
-- $\sum_{j=1}^{10} w_j = 1.0000 \ (100\%)$
-
-*Catatan Akademik:* Jika pengguna memberikan peringkat kembar (*tied-rank*, misal kriteria A dan B sama-sama Rank 1), sistem secara otomatis menerapkan **Average Harmonic Weight** dari rentang peringkat tersebut sehingga total bobot tetap valid $100\%$.
+$$w_i = \frac{1}{m} \sum_{k=i}^{m} \frac{1}{k} \quad \text{dimana } \sum_{i=1}^{m} w_i = 1$$
 
 ---
 
-### B. Algoritma Perankingan TOPSIS (10 Dimensi)
+### B. Metode Shannon Entropy (Pembobotan Objektif Statistik)
+1. **Normalisasi Proporsi Matriks ($P_{ij}$):**
+   $$P_{ij} = \frac{x_{ij}}{\sum_{k=1}^n x_{kj}}$$
+   *(Untuk kriteria Cost $C_1$ dan $C_7$, nilai dibalik $\hat{x}_{ij} = \frac{1}{x_{ij}}$ sebelum diproporsikan).*
+2. **Nilai Entropi Kriteria ($E_j$):**
+   $$E_j = -k \sum_{i=1}^n P_{ij} \ln(P_{ij}) \quad \text{dimana } k = \frac{1}{\ln(n)}$$
+3. **Derajat Diversifikasi ($d_j$):**
+   $$d_j = 1 - E_j$$
+4. **Bobot Entropi Akhir ($w_j$):**
+   $$w_j = \frac{d_j}{\sum_{k=1}^{10} d_k}$$
 
-1. **Matriks Keputusan ($X$):**
-   $$X = \begin{bmatrix} x_{1,1} & x_{1,2} & \dots & x_{1,10} \\ x_{2,1} & x_{2,2} & \dots & x_{2,10} \\ \vdots & \vdots & \ddots & \vdots \\ x_{n,1} & x_{n,2} & \dots & x_{n,10} \end{bmatrix}$$
+---
 
+### C. Metode LOPCOW (Logarithmic Percentage Change-driven Objective Weighting)
+1. **Normalisasi Min-Max ($r_{ij}$):**
+   - Benefit: $r_{ij} = \frac{x_{ij} - x_j^{\min}}{x_j^{\max} - x_j^{\min}}$
+   - Cost: $r_{ij} = \frac{x_j^{\max} - x_{ij}}{x_j^{\max} - x_j^{\min}}$
+2. **Rata-rata Nilai Normalisasi ($\bar{r}_j$):**
+   $$\bar{r}_j = \frac{1}{n} \sum_{i=1}^n r_{ij}$$
+3. **Deviasi Persentase Kuadrat Logaritmik ($LP_{ij}$):**
+   $$LP_{ij} = \left[ \ln\left( \frac{r_{ij} + \sigma}{\bar{r}_j + \sigma} \right) \right]^2 \quad (\sigma = 0.01)$$
+4. **Variansi Kriteria ($V_j$):**
+   $$V_j = \frac{1}{n} \sum_{i=1}^n LP_{ij}$$
+5. **Bobot LOPCOW Akhir ($w_j$):**
+   $$w_j = \frac{V_j}{\sum_{k=1}^{10} V_k}$$
+
+---
+
+## 5. Algoritma Perankingan TOPSIS (10 Dimensi)
+
+1. **Matriks Keputusan ($X_{n \times 10}$):** Menampung data alternatif laptop.
 2. **Normalisasi Vektor Euclidean Matriks ($R$):**
-   $$r_{ij} = \frac{x_{ij}}{\sqrt{\sum_{k=1}^n x_{kj}^2}} \quad \text{untuk } i=1, \dots, n \text{ dan } j=1, \dots, 10$$
-
+   $$r_{ij} = \frac{x_{ij}}{\sqrt{\sum_{k=1}^n x_{kj}^2}}$$
 3. **Matriks Ternormalisasi Terbobot ($Y$):**
-   $$y_{ij} = w_j \cdot r_{ij}$$
-
+   $$y_{ij} = w_j \cdot r_{ij} \quad (w_j \text{ berasal dari ROC, Entropy, atau LOPCOW})$$
 4. **Solusi Ideal Positif ($A^+$) & Solusi Ideal Negatif ($A^-$):**
-   - **Kriteria Cost ($C_1$ Harga, $C_7$ Berat):**
-     $$y_j^+ = \min_{i}(y_{ij}), \quad y_j^- = \max_{i}(y_{ij})$$
-   - **Kriteria Benefit ($C_2, C_3, C_4, C_5, C_6, C_8, C_9, C_{10}$):**
-     $$y_j^+ = \max_{i}(y_{ij}), \quad y_j^- = \min_{i}(y_{ij})$$
-
-5. **Jarak Euclidean Alternatif terhadap $A^+$ dan $A^-$:**
-   $$D_i^+ = \sqrt{\sum_{j=1}^{10} (y_{ij} - y_j^+)^2}$$
-   $$D_i^- = \sqrt{\sum_{j=1}^{10} (y_{ij} - y_j^-)^2}$$
-
+   - Cost ($C_1, C_7$): $y_j^+ = \min(y_{ij})$, $y_j^- = \max(y_{ij})$
+   - Benefit ($C_2 \dots C_6, C_8 \dots C_{10}$): $y_j^+ = \max(y_{ij})$, $y_j^- = \min(y_{ij})$
+5. **Jarak Euclidean Alternatif ($D_i^+$ dan $D_i^-$):**
+   $$D_i^+ = \sqrt{\sum_{j=1}^{10} (y_{ij} - y_j^+)^2}, \quad D_i^- = \sqrt{\sum_{j=1}^{10} (y_{ij} - y_j^-)^2}$$
 6. **Nilai Preferensi Kedekatan Relatif ($V_i$):**
    $$V_i = \frac{D_i^-}{D_i^+ + D_i^-} \quad (0 \le V_i \le 1)$$
-   *Alternatif dengan $V_i$ terbesar adalah rekomendasi laptop terbaik (#1).*
-
----
-
-## 4. Fitur Khusus Konsultasi Pelanggan Toko Super Komputer
-1. **Preset Profil Kebutuhan Konsumen:**
-   - 🎓 *Mahasiswa / Pelajar (Hemat)*: Mengutamakan $C_1$ Harga, $C_6$ Baterai, $C_7$ Portabilitas.
-   - 🎮 *Gaming & 3D Rendering*: Mengutamakan $C_5$ GPU, $C_2$ CPU, $C_3$ RAM, $C_8$ Layar.
-   - 🎨 *Content Creator & Desain*: Mengutamakan $C_8$ Kualitas Layar OLED/sRGB, $C_2$ CPU, $C_4$ SSD.
-   - 💼 *Bisnis & Eksekutif Mobile*: Mengutamakan $C_7$ Portabilitas Berat, $C_6$ Baterai, $C_9$ Garansi ADP.
-   - 🔧 *Investasi Jangka Panjang*: Mengutamakan $C_{10}$ Kemampuan Upgrade, $C_9$ Garansi.
-2. **Filter Budget Maksimal & Kategori:**
-   - Menyaring alternatif sebelum dikalkulasi TOPSIS sesuai batasan kemampuan dana pelanggan.
-3. **Cetak Lembar Konsultasi Resmi Pelanggan:**
-   - Format cetak profesional berkop Toko Super Komputer dengan nama pelanggan, tanggal, batasan budget, kartu rekomendasi juara 1, dan tabel ranking lengkap.
-4. **Transparansi Matematis Penuh (Modal Matriks):**
-   - Menampilkan Vektor Pembagi Euclidean, Matriks $R$, Matriks $Y$, Solusi $A^+/A^-$, dan Jarak Euclidean $D^+/D^-$.
-5. **Ekspor Data ke CSV:**
-   - Mengunduh hasil perankingan 10 kriteria ke file `.csv` untuk arsip atau lampiran penelitian skripsi.
-
----
-
-## 5. Skema DDL Database Supabase (PostgreSQL)
-
-```sql
--- 1. TABEL DATA LAPTOP (10 Kriteria Lengkap)
-CREATE TABLE IF NOT EXISTS public.laptops (
-    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-    nama VARCHAR(150) NOT NULL,
-    merek VARCHAR(50) NOT NULL,
-    status VARCHAR(20) CHECK (status IN ('ready', 'indent')) NOT NULL DEFAULT 'ready',
-    kategori_penggunaan VARCHAR(50) DEFAULT 'Umum',
-    harga NUMERIC(15, 2) NOT NULL,
-    cpu_score NUMERIC(6, 2) NOT NULL,
-    ram_gb INT NOT NULL,
-    ssd_gb INT NOT NULL,
-    gpu_score NUMERIC(6, 2) NOT NULL,
-    baterai_wh NUMERIC(6, 2) NOT NULL,
-    berat_kg NUMERIC(4, 2) NOT NULL,
-    layar_score NUMERIC(6, 2) NOT NULL,
-    garansi_score NUMERIC(4, 2) NOT NULL DEFAULT 3,
-    upgrade_score NUMERIC(4, 2) NOT NULL DEFAULT 3,
-    spesifikasi_ringkas TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 2. ROW LEVEL SECURITY (RLS) POLICIES
-ALTER TABLE public.laptops ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Laptops" ON public.laptops FOR SELECT USING (true);
-CREATE POLICY "Public Insert Laptops" ON public.laptops FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public Update Laptops" ON public.laptops FOR UPDATE USING (true);
-CREATE POLICY "Public Delete Laptops" ON public.laptops FOR DELETE USING (true);
-```
+   *Alternatif dengan $V_i$ tertinggi menempati peringkat #1 rekomendasi terbaik.*

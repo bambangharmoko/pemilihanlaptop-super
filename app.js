@@ -1,6 +1,7 @@
 /**
  * APP ENGINE - Toko Super Komputer
  * Logika Aplikasi SPK 10 Kriteria (C1 - C10):
+ * - Koleksi 20 Dataset Laptop Demo Valid & Non-Repeating Dynamic Ingestion
  * - Alpine.js Reactive Store
  * - Metode Pembobotan Rank Order Centroid (ROC) 10 Kriteria dengan Penanganan Tied-Rank
  * - Algoritma TOPSIS 10 Dimensi (Cost/Benefit Solusi Ideal A+/A-, Jarak Euclidean D+/D-, Skor Vi)
@@ -8,27 +9,27 @@
  * - UI Modal, Form Validation, dan Ekspor CSV
  */
 
-// Dataset Laptop Demo Default (Lengkap 10 Kriteria C1 - C10)
-const SEED_LAPTOPS = [
+// KOLEKSI 20 DATASET LAPTOP RESMI & VALID DI INDONESIA (Lengkap 10 Kriteria C1 - C10)
+const MASTER_LAPTOP_POOL = [
   {
-    nama: "Lenovo Legion 5 Slim 16IRH8",
+    nama: "Lenovo Legion Pro 5 16IRX9",
     merek: "Lenovo",
     status: "ready",
     kategori_penggunaan: "Gaming / Creator",
-    harga: 18499000,
-    cpu_score: 92,
-    ram_gb: 16,
+    harga: 26999000,
+    cpu_score: 96,
+    ram_gb: 32,
     ssd_gb: 1024,
-    gpu_score: 88,
+    gpu_score: 92,
     baterai_wh: 80,
-    berat_kg: 2.30,
-    layar_score: 90,
-    garansi_score: 4, // 2 Thn Resmi + 1 Thn ADP
-    upgrade_score: 5, // Dual SODIMM + Dual M.2 NVMe
-    spesifikasi_ringkas: "Intel Core i7-13700H / RTX 4060 8GB / 16GB DDR5 / 1TB SSD / WQXGA 165Hz"
+    berat_kg: 2.50,
+    layar_score: 94,
+    garansi_score: 5, // 3 Thn Resmi + 3 Thn ADP
+    upgrade_score: 5, // Dual Slot SODIMM + Dual Slot M.2 NVMe
+    spesifikasi_ringkas: "Intel Core i7-14700HX / RTX 4070 8GB / 32GB DDR5 / 1TB SSD / WQXGA 240Hz 500nits"
   },
   {
-    nama: "Asus ROG Zephyrus G14 OLED",
+    nama: "Asus ROG Zephyrus G14 OLED GA403",
     merek: "Asus",
     status: "ready",
     kategori_penggunaan: "Ultrabook Gaming",
@@ -45,72 +46,310 @@ const SEED_LAPTOPS = [
     spesifikasi_ringkas: "Ryzen 9 8945HS / RTX 4070 / 32GB LPDDR5X / 3K OLED 120Hz 0.2ms"
   },
   {
-    nama: "Apple MacBook Air M2 13-inch",
+    nama: "Apple MacBook Air M3 13-inch",
     merek: "Apple",
     status: "ready",
     kategori_penggunaan: "Office / Mahasiswa",
-    harga: 15499000,
-    cpu_score: 86,
-    ram_gb: 8,
-    ssd_gb: 256,
-    gpu_score: 72,
+    harga: 17999000,
+    cpu_score: 90,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 76,
     baterai_wh: 52.6,
     berat_kg: 1.24,
-    layar_score: 92,
+    layar_score: 93,
     garansi_score: 2, // 1 Thn Resmi Apple
     upgrade_score: 1, // Full On-Board / Soldered
-    spesifikasi_ringkas: "Apple M2 8-core CPU / 8-core GPU / Liquid Retina Display / Fanless Silent"
+    spesifikasi_ringkas: "Apple M3 8-core CPU / 10-core GPU / Liquid Retina Display / Fanless Silent"
   },
   {
-    nama: "Acer Swift Go 14 OLED EVO",
+    nama: "Acer Swift Go 14 OLED EVO SFG14",
     merek: "Acer",
     status: "ready",
     kategori_penggunaan: "Bisnis / Multitasking",
-    harga: 12999000,
-    cpu_score: 85,
+    harga: 13499000,
+    cpu_score: 88,
     ram_gb: 16,
     ssd_gb: 512,
-    gpu_score: 68,
+    gpu_score: 74,
     baterai_wh: 65,
     berat_kg: 1.32,
-    layar_score: 94,
-    garansi_score: 3, // 2 Thn Resmi
+    layar_score: 95,
+    garansi_score: 3, // 2 Thn Resmi + 1 Thn Priority
     upgrade_score: 2, // RAM On-board + 1 Slot SSD
-    spesifikasi_ringkas: "Intel Core i5-13500H / Iris Xe / 16GB LPDDR5 / 2.8K 90Hz OLED 100% DCI-P3"
+    spesifikasi_ringkas: "Intel Core Ultra 7 155H / Intel Arc / 16GB LPDDR5X / 2.8K 90Hz OLED 100% DCI-P3"
   },
   {
-    nama: "HP Pavilion Aero 13 Ultralight",
+    nama: "HP Pavilion Aero 13-be2000",
     merek: "HP",
     status: "indent",
     kategori_penggunaan: "Mobilitas Tinggi",
-    harga: 11499000,
-    cpu_score: 82,
+    harga: 11999000,
+    cpu_score: 83,
     ram_gb: 16,
     ssd_gb: 512,
     gpu_score: 60,
     baterai_wh: 43,
-    berat_kg: 0.98,
-    layar_score: 85,
-    garansi_score: 3, // 2 Thn Resmi
+    berat_kg: 0.97,
+    layar_score: 86,
+    garansi_score: 3, // 2 Thn Resmi HP
     upgrade_score: 2, // RAM On-board + 1 Slot SSD
-    spesifikasi_ringkas: "Ryzen 5 7535U / Radeon 660M / Super Ringan < 1Kg Magnesium Chassis"
+    spesifikasi_ringkas: "Ryzen 5 7535U / Radeon 660M / Super Ringan 970g Magnesium Chassis"
   },
   {
     nama: "Axioo Hype 5 AMD Edition",
     merek: "Axioo",
     status: "ready",
     kategori_penggunaan: "Budget / Mahasiswa",
-    harga: 5199000,
+    harga: 5299000,
     cpu_score: 70,
     ram_gb: 8,
     ssd_gb: 256,
     gpu_score: 52,
     baterai_wh: 45,
     berat_kg: 1.42,
-    layar_score: 75,
+    layar_score: 76,
     garansi_score: 2, // 1 Thn Resmi
     upgrade_score: 3, // 1 Slot RAM Bebas + 1 M.2 SSD
     spesifikasi_ringkas: "Ryzen 5 5500U / 8GB Upgradable / 256GB NVMe / FHD IPS Display"
+  },
+  {
+    nama: "Asus Vivobook S 14 OLED M5406",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Desain / Mahasiswa",
+    harga: 14299000,
+    cpu_score: 91,
+    ram_gb: 16,
+    ssd_gb: 1024,
+    gpu_score: 78,
+    baterai_wh: 75,
+    berat_kg: 1.30,
+    layar_score: 96,
+    garansi_score: 4, // 2 Thn Resmi + 1 Thn ADP
+    upgrade_score: 2, // RAM On-Board + 1 Slot SSD
+    spesifikasi_ringkas: "Ryzen 7 8845HS / Radeon 780M / 16GB LPDDR5X / 3K 120Hz OLED 100% DCI-P3"
+  },
+  {
+    nama: "Lenovo LOQ 15IAX9 Essential",
+    merek: "Lenovo",
+    status: "ready",
+    kategori_penggunaan: "Gaming Entry",
+    harga: 12999000,
+    cpu_score: 84,
+    ram_gb: 12,
+    ssd_gb: 512,
+    gpu_score: 82,
+    baterai_wh: 60,
+    berat_kg: 2.38,
+    layar_score: 85,
+    garansi_score: 4, // 2 Thn Resmi + 2 Thn ADP
+    upgrade_score: 5, // Dual SODIMM + Dual M.2 SSD
+    spesifikasi_ringkas: "Intel Core i5-12450HX / RTX 3050 6GB 95W / 12GB DDR5 / 100% sRGB 144Hz"
+  },
+  {
+    nama: "MSI Cyborg 15 A13VEK",
+    merek: "MSI",
+    status: "ready",
+    kategori_penggunaan: "Gaming Cyberpunk",
+    harga: 14899000,
+    cpu_score: 86,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 85,
+    baterai_wh: 53.5,
+    berat_kg: 1.98,
+    layar_score: 82,
+    garansi_score: 3, // 2 Thn Resmi MSI
+    upgrade_score: 4, // Dual Slot RAM + 1 Slot SSD
+    spesifikasi_ringkas: "Intel Core i7-13620H / RTX 4050 6GB / 16GB DDR5 / Translucent Cyberpunk Chassis"
+  },
+  {
+    nama: "Dell Inspiron 14 5440",
+    merek: "Dell",
+    status: "ready",
+    kategori_penggunaan: "Office / Profesional",
+    harga: 12499000,
+    cpu_score: 82,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 62,
+    baterai_wh: 54,
+    berat_kg: 1.54,
+    layar_score: 84,
+    garansi_score: 3, // 2 Thn Onsite ProSupport
+    upgrade_score: 3, // 1 Slot RAM Bebas + 1 M.2 SSD
+    spesifikasi_ringkas: "Intel Core 5 120U / Intel Graphics / 16GB DDR5 / 16:10 FHD+ ComfortView"
+  },
+  {
+    nama: "Advan Workplus AMD Edition",
+    merek: "Advan",
+    status: "ready",
+    kategori_penggunaan: "Budget Produktivitas",
+    harga: 6899000,
+    cpu_score: 78,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 68,
+    baterai_wh: 58,
+    berat_kg: 1.40,
+    layar_score: 82,
+    garansi_score: 2, // 1 Thn Resmi Advan
+    upgrade_score: 3, // 1 Slot RAM Bebas + 2 Slot M.2 SSD
+    spesifikasi_ringkas: "Ryzen 5 6600H / Radeon 660M / 16GB LPDDR5 / Dual M.2 SSD Slot Metal Body"
+  },
+  {
+    nama: "Apple MacBook Pro 14 M3 Pro",
+    merek: "Apple",
+    status: "indent",
+    kategori_penggunaan: "Pro Creator / Studio",
+    harga: 31999000,
+    cpu_score: 96,
+    ram_gb: 18,
+    ssd_gb: 512,
+    gpu_score: 92,
+    baterai_wh: 70,
+    berat_kg: 1.61,
+    layar_score: 99,
+    garansi_score: 2, // 1 Thn Resmi Apple
+    upgrade_score: 1, // Full On-Board / Soldered
+    spesifikasi_ringkas: "Apple M3 Pro 11-core / 14-core GPU / Liquid Retina XDR 120Hz ProMotion"
+  },
+  {
+    nama: "Lenovo ThinkPad E14 Gen 5",
+    merek: "Lenovo",
+    status: "ready",
+    kategori_penggunaan: "Business Durability",
+    harga: 13999000,
+    cpu_score: 85,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 65,
+    baterai_wh: 57,
+    berat_kg: 1.43,
+    layar_score: 86,
+    garansi_score: 4, // 3 Thn Premier Support
+    upgrade_score: 3, // 8GB Soldered + 1 Slot SODIMM + 2 Slot SSD
+    spesifikasi_ringkas: "Ryzen 7 7730U / MIL-STD-810H Tested / TrackPoint / WUXGA 100% sRGB"
+  },
+  {
+    nama: "Asus TUF Gaming A15 FA507",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Heavy Gaming / 3D",
+    harga: 17499000,
+    cpu_score: 90,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 88,
+    baterai_wh: 90,
+    berat_kg: 2.20,
+    layar_score: 88,
+    garansi_score: 4, // 2 Thn Resmi + 1 Thn Perfect Warranty
+    upgrade_score: 5, // Dual SODIMM DDR5 + Dual M.2 SSD
+    spesifikasi_ringkas: "Ryzen 7 7735HS / RTX 4060 8GB 140W / 90Wh Battery / FHD 144Hz 100% sRGB"
+  },
+  {
+    nama: "Acer Predator Helios Neo 16",
+    merek: "Acer",
+    status: "ready",
+    kategori_penggunaan: "High-End Gaming",
+    harga: 22999000,
+    cpu_score: 94,
+    ram_gb: 16,
+    ssd_gb: 1024,
+    gpu_score: 90,
+    baterai_wh: 90,
+    berat_kg: 2.60,
+    layar_score: 94,
+    garansi_score: 5, // 3 Thn Resmi + 3 Thn ADP
+    upgrade_score: 5, // Dual Slot SODIMM + Dual M.2 PCIe Gen4
+    spesifikasi_ringkas: "Intel Core i7-14650HX / RTX 4060 8GB / Liquid Metal Cooling / WQXGA 165Hz 500nits"
+  },
+  {
+    nama: "HP Victus 15-fb1000",
+    merek: "HP",
+    status: "ready",
+    kategori_penggunaan: "Gaming Entry Budget",
+    harga: 10999000,
+    cpu_score: 78,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 75,
+    baterai_wh: 52.5,
+    berat_kg: 2.29,
+    layar_score: 80,
+    garansi_score: 3, // 2 Thn Resmi + 2 Thn ADP
+    upgrade_score: 4, // Dual Slot SODIMM + 1 Slot SSD
+    spesifikasi_ringkas: "Ryzen 5 7535HS / RTX 2050 4GB / 16GB DDR5 / FHD IPS 144Hz"
+  },
+  {
+    nama: "Xiaomi RedmiBook Pro 15",
+    merek: "Xiaomi",
+    status: "indent",
+    kategori_penggunaan: "Ultrabook Creator",
+    harga: 11499000,
+    cpu_score: 84,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 68,
+    baterai_wh: 72,
+    berat_kg: 1.78,
+    layar_score: 95,
+    garansi_score: 2, // 1 Thn Resmi
+    upgrade_score: 2, // RAM On-Board + 1 M.2 SSD
+    spesifikasi_ringkas: "Intel Core i5-13500H / 16GB LPDDR5 / 3.2K 120Hz 500nits CNC Unibody"
+  },
+  {
+    nama: "MSI Modern 14 C12M",
+    merek: "MSI",
+    status: "ready",
+    kategori_penggunaan: "Mahasiswa / Casual",
+    harga: 7499000,
+    cpu_score: 75,
+    ram_gb: 8,
+    ssd_gb: 512,
+    gpu_score: 54,
+    baterai_wh: 39.3,
+    berat_kg: 1.40,
+    layar_score: 78,
+    garansi_score: 3, // 2 Thn Resmi MSI
+    upgrade_score: 2, // RAM On-Board + 1 Slot M.2
+    spesifikasi_ringkas: "Intel Core i3-1215U / 8GB DDR4 / 512GB NVMe / Ultra-Light 1.4Kg Flip-n-Share"
+  },
+  {
+    nama: "Asus Zenbook 14 OLED UX3405",
+    merek: "Asus",
+    status: "ready",
+    kategori_penggunaan: "Premium Ultraportable",
+    harga: 20999000,
+    cpu_score: 93,
+    ram_gb: 32,
+    ssd_gb: 1024,
+    gpu_score: 76,
+    baterai_wh: 75,
+    berat_kg: 1.20,
+    layar_score: 98,
+    garansi_score: 4, // 2 Thn Global + 1 Thn Perfect Warranty
+    upgrade_score: 2, // LPDDR5X On-board + 1 M.2 SSD
+    spesifikasi_ringkas: "Intel Core Ultra 7 155H / 32GB LPDDR5X / 3K 120Hz Lumina OLED / 75Wh Battery"
+  },
+  {
+    nama: "Lenovo Yoga Slim 7 Carbon 13",
+    merek: "Lenovo",
+    status: "indent",
+    kategori_penggunaan: "Carbon Featherlight",
+    harga: 16499000,
+    cpu_score: 87,
+    ram_gb: 16,
+    ssd_gb: 512,
+    gpu_score: 66,
+    baterai_wh: 50,
+    berat_kg: 0.96,
+    layar_score: 94,
+    garansi_score: 5, // 3 Thn Premium Care + 3 Thn ADP
+    upgrade_score: 1, // Full On-Board
+    spesifikasi_ringkas: "Ryzen 7 5800U / Carbon Fiber & Magnesium / 2.5K QHD+ 90Hz 100% sRGB / 960g"
   }
 ];
 
@@ -227,7 +466,7 @@ function spkApp() {
     showToast(message, type = 'success') {
       const id = Date.now();
       this.toasts.push({ id, message, type });
-      setTimeout(() => this.removeToast(id), 4500);
+      setTimeout(() => this.removeToast(id), 5000);
     },
     removeToast(id) {
       this.toasts = this.toasts.filter(t => t.id !== id);
@@ -269,8 +508,6 @@ function spkApp() {
     },
 
     // 1. RUMUS PEMBOBOTAN METODE ROC (Rank Order Centroid - m = 10)
-    // Formula Simplex Centroid: w_j = (1 / m) * sum_{k=j}^m (1 / k)
-    // Dilengkapi penanganan peringkat kembar (Tied-Rank Average Centroid) agar total bobot = 100.00%
     hitungBobotROC() {
       const m = this.kriteriaList.length; // m = 10
       const sorted = [...this.kriteriaList].sort((a, b) => a.rank - b.rank);
@@ -329,7 +566,7 @@ function spkApp() {
       } catch(e) {}
       this.hitungBobotROC();
       this.saveSettings();
-      this.showToast("Prioritas kriteria dikembalikan ke default (Rank 1 s/d 10). Tekan tombol 'Kalkulasi Rekomendasi TOPSIS' untuk memperbarui hasil.", "info");
+      this.showToast("Prioritas kriteria dikembalikan ke default (Rank 1 s/d 10). Tekan tombol 'Kalkulasi Rekomendasi TOPSIS' untuk memproses hasil.", "info");
     },
 
     // 2. MEMUAT DATA LAPTOP MELALUI SUPABASE SERVICE
@@ -345,7 +582,6 @@ function spkApp() {
         }
       } else if (!res.error && res.data) {
         this.dbStatus = 'online';
-        // Pastikan record memiliki default garansi_score dan upgrade_score jika kolom baru
         this.laptopsData = res.data.map(l => ({
           ...l,
           garansi_score: Number(l.garansi_score || 3),
@@ -489,27 +725,50 @@ function spkApp() {
       }
     },
 
-    // 6. SEED DEMO DATA
+    // 6. FITUR "DEMO DATA" CERDAS: INJEKSI DATA BARU YANG TIDAK DUPLIKAT SECARA BERTAHAP
     async seedDataContoh() {
-      if (this.laptopsData.length > 0) {
-        if (!confirm("Tambahkan 6 data demo contoh lengkap 10 kriteria ke daftar laptop yang ada?")) return;
+      // 1. Dapatkan daftar nama laptop yang sudah ada di database saat ini (case-insensitive)
+      const existingNames = new Set(this.laptopsData.map(l => (l.nama || '').toLowerCase().trim()));
+
+      // 2. Cari laptop di koleksi MASTER_LAPTOP_POOL yang BELUM PERNAH dimasukkan
+      const availableUnadded = MASTER_LAPTOP_POOL.filter(
+        item => !existingNames.has(item.nama.toLowerCase().trim())
+      );
+
+      // 3. Jika semua 20 model dalam koleksi sudah dimasukkan
+      if (availableUnadded.length === 0) {
+        this.showToast(`ℹ️ Seluruh ${MASTER_LAPTOP_POOL.length} model laptop demo valid telah ada di database! Anda dapat menginput laptop kustom secara manual.`, "info");
+        return;
       }
 
-      const res = await window.SupabaseService.seedLaptops(SEED_LAPTOPS);
+      // 4. Ambil batch berikutnya (3 laptop baru sekaligus setiap kali tombol ditekan)
+      const BATCH_SIZE = 3;
+      const nextBatch = availableUnadded.slice(0, BATCH_SIZE);
+      const remainingAfterThis = availableUnadded.length - nextBatch.length;
+
+      const batchNames = nextBatch.map(b => b.nama).join(', ');
+      if (this.laptopsData.length > 0) {
+        if (!confirm(`Tambahkan ${nextBatch.length} data laptop demo valid baru ke database?\n\nModel baru:\n• ${nextBatch.map(b => b.nama + ' (Rp ' + Number(b.harga).toLocaleString('id-ID') + ')').join('\n• ')}`)) {
+          return;
+        }
+      }
+
+      // 5. Simpan ke Supabase Cloud (Bulk Insert)
+      const res = await window.SupabaseService.seedLaptops(nextBatch);
       if (res && !res.error) {
         this.dbStatus = 'online';
-        this.showToast("6 data laptop demo berhasil disimpan ke Supabase Cloud!", "success");
+        this.showToast(`✅ Berhasil menambahkan ${nextBatch.length} laptop baru: ${batchNames}. (Tersisa ${remainingAfterThis} varian demo di koleksi)`, "success");
         await this.loadDataLaptops(false);
       } else {
         if (res?.isTableMissing) {
           this.dbStatus = 'table_missing';
           this.modalSql = true;
         }
-        for (const item of SEED_LAPTOPS) {
+        for (const item of nextBatch) {
           this.laptopsData.push({ id: Date.now() + Math.floor(Math.random()*10000), ...item });
         }
         localStorage.setItem('spk_laptops_backup_10', JSON.stringify(this.laptopsData));
-        this.showToast("6 data laptop demo dimuat ke cache lokal.", "info");
+        this.showToast(`✅ ${nextBatch.length} laptop baru dimuat ke cache: ${batchNames}.`, "info");
       }
     },
 

@@ -93,7 +93,7 @@
   <div class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none no-print">
     <template x-for="toast in toasts" :key="toast.id">
       <div class="pointer-events-auto flex items-center justify-between p-4 rounded-xl shadow-xl text-xs font-semibold transition-all transform duration-300"
-           :class="toast.type === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/20' : (toast.type === 'error' ? 'bg-rose-600 text-white shadow-rose-500/20' : 'bg-slate-900 text-white shadow-slate-900/20')"
+           :class="toast.type === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/20' : (toast.type === 'error' ? 'bg-rose-600 text-white shadow-rose-500/20' : (toast.type === 'warning' ? 'bg-amber-600 text-white shadow-amber-500/20' : 'bg-slate-900 text-white shadow-slate-900/20'))"
            x-transition:enter="translate-y-2 opacity-0"
            x-transition:enter-end="translate-y-0 opacity-100"
            x-transition:leave="opacity-100"
@@ -105,6 +105,9 @@
           <template x-if="toast.type === 'error'">
             <svg class="w-4 h-4 text-rose-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
           </template>
+          <template x-if="toast.type === 'warning'">
+            <svg class="w-4 h-4 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </template>
           <template x-if="toast.type === 'info'">
             <svg class="w-4 h-4 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           </template>
@@ -113,6 +116,27 @@
         <button @click="removeToast(toast.id)" class="opacity-75 hover:opacity-100 ml-3">&times;</button>
       </div>
     </template>
+  </div>
+
+  <!-- SUPABASE TABLE WARNING BANNER (Shows only if database tables haven't been created yet) -->
+  <div x-show="dbStatus === 'table_missing'" class="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-4 py-2.5 text-xs font-semibold shadow-md flex items-center justify-between no-print" x-transition>
+    <div class="max-w-7xl mx-auto flex items-center justify-between w-full gap-3">
+      <div class="flex items-center space-x-2">
+        <svg class="w-5 h-5 flex-shrink-0 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <span>
+          <strong>Database Supabase Cloud Belum Siap:</strong> Tabel <code>laptops</code> belum dibuat di PostgreSQL Supabase sehingga data belum bisa tersinkron otomatis antar-device.
+        </span>
+      </div>
+      <div class="flex items-center space-x-2 flex-shrink-0">
+        <button @click="modalSql = true" class="bg-white text-amber-800 hover:bg-amber-50 px-3 py-1 rounded-lg font-bold shadow-xs transition flex items-center space-x-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          <span>Setup SQL Database Sekarang</span>
+        </button>
+        <button @click="loadDataLaptops(true)" class="bg-amber-700/60 hover:bg-amber-700 px-2.5 py-1 rounded-lg transition" title="Cek ulang koneksi">
+          <span>🔄 Cek</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- HEADER / NAVBAR -->
@@ -134,24 +158,36 @@
       </div>
 
       <!-- Action Buttons & Database Status -->
-      <div class="flex items-center space-x-2.5 sm:space-x-3">
-        <!-- DB Status Badge -->
-        <div class="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border"
-             :class="dbStatus === 'online' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'">
-          <span class="w-2 h-2 rounded-full animate-pulse" :class="dbStatus === 'online' ? 'bg-emerald-500' : 'bg-amber-500'"></span>
-          <span x-text="dbStatus === 'online' ? 'Supabase Terhubung' : 'Mode Offline / Lokal'"></span>
-        </div>
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        
+        <!-- DB Status Badge with Click for Info -->
+        <button @click="dbStatus === 'online' ? showToast('Supabase Cloud Database Terhubung & Aktif! Data tersinkron ke semua device.', 'success') : modalSql = true"
+             class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border transition cursor-pointer hover:shadow-xs"
+             :class="dbStatus === 'online' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-300'">
+          <span class="w-2 h-2 rounded-full" :class="dbStatus === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
+          <span class="hidden sm:inline" x-text="dbStatus === 'online' ? 'Supabase Terhubung' : 'Setup Database SQL'"></span>
+          <span class="sm:hidden" x-text="dbStatus === 'online' ? 'Online' : 'Setup DB'"></span>
+        </button>
 
-        <!-- Seed Demo Data (If empty) -->
+        <!-- Refresh / Sync Button -->
+        <button @click="loadDataLaptops(true)" 
+                :disabled="isLoading"
+                class="text-xs font-semibold px-2.5 sm:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center space-x-1"
+                title="Sinkronkan data terbaru dari Supabase Cloud">
+          <svg class="w-3.5 h-3.5" :class="isLoading ? 'animate-spin text-indigo-600' : 'text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          <span class="hidden sm:inline">Sinkron</span>
+        </button>
+
+        <!-- Seed Demo Data -->
         <button @click="seedDataContoh()" 
-                class="hidden sm:inline-flex text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition items-center space-x-1.5"
+                class="hidden md:inline-flex text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition items-center space-x-1.5"
                 title="Isi database dengan data contoh laptop untuk simulasi">
           <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
           <span>Demo Data</span>
         </button>
 
         <!-- Add Laptop Modal Button -->
-        <button @click="bukaModalTambah()" class="text-xs font-bold px-3.5 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center space-x-1.5 shadow-sm shadow-indigo-200 active:scale-95">
+        <button @click="bukaModalTambah()" class="text-xs font-bold px-3 sm:px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center space-x-1.5 shadow-sm shadow-indigo-200 active:scale-95">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
           <span class="hidden xs:inline">+ Input Laptop</span>
           <span class="xs:hidden">+ Laptop</span>
@@ -187,7 +223,7 @@
         Rekomendasi Pemilihan Laptop <span class="bg-gradient-to-r from-indigo-600 to-sky-600 bg-clip-text text-transparent">Super Komputer</span>
       </h1>
       <p class="text-slate-600 mt-2 text-xs sm:text-sm leading-relaxed">
-        Sistem menghitung pembobotan 8 kriteria secara objektif dengan rumus deret harmonik <strong class="text-slate-800 font-semibold">Rank Order Centroid (ROC)</strong> dan menentukan alternatif laptop paling ideal berdasarkan kedekatan geometris <strong class="text-slate-800 font-semibold">TOPSIS</strong>.
+        Sistem menghitung pembobotan 8 kriteria secara objektif dengan rumus deret harmonik <strong class="text-slate-800 font-semibold">Rank Order Centroid (ROC)</strong> dan menentukan alternatif laptop paling ideal berdasarkan kedekatan geometris <strong class="text-slate-800 font-semibold">TOPSIS</strong> terhubung langsung ke Cloud Database Supabase.
       </p>
     </div>
 
@@ -520,10 +556,14 @@
             <span class="w-6 h-6 rounded-lg bg-slate-700 text-white flex items-center justify-center text-xs font-bold">3</span>
             <h2 class="text-base sm:text-lg font-bold text-slate-900">Kelola Data Laptop Toko</h2>
           </div>
-          <p class="text-xs text-slate-500 mt-1 pl-8">Daftar inventaris laptop yang tersimpan di database Supabase (Tersedia opsi edit & hapus).</p>
+          <p class="text-xs text-slate-500 mt-1 pl-8">Daftar inventaris laptop yang tersinkronisasi ke PostgreSQL Supabase Cloud.</p>
         </div>
 
         <div class="flex items-center space-x-2 self-start sm:self-auto pl-8 sm:pl-0">
+          <button @click="loadDataLaptops(true)" class="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5" :class="isLoading ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span>Sinkronkan Cloud</span>
+          </button>
           <button @click="bukaModalTambah()" class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center space-x-1.5 shadow-sm shadow-emerald-200">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             <span>Tambah Laptop Baru</span>
@@ -579,7 +619,7 @@
         <div class="flex items-center justify-between pb-4 border-b border-slate-100">
           <div>
             <h3 class="font-extrabold text-lg text-slate-900" x-text="isEditMode ? 'Edit Data Laptop' : 'Input Data Laptop Baru'"></h3>
-            <p class="text-xs text-slate-500">Data tersinkronisasi otomatis ke Database Supabase Toko Super Komputer.</p>
+            <p class="text-xs text-slate-500">Data tersimpan dan tersinkronisasi otomatis ke Database Supabase Cloud.</p>
           </div>
           <button @click="modalInput = false" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none p-1">&times;</button>
         </div>
@@ -674,11 +714,64 @@
               <template x-if="isSaving">
                 <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
               </template>
-              <span x-text="isEditMode ? 'Perbarui Data' : 'Simpan ke Supabase'"></span>
+              <span x-text="isEditMode ? 'Perbarui Data Laptop' : 'Simpan ke Supabase'"></span>
             </button>
           </div>
 
         </form>
+      </div>
+    </div>
+
+    <!-- MODAL POPUP SETUP SQL SUPABASE -->
+    <div x-show="modalSql" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm no-print" x-transition>
+      <div class="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 overflow-y-auto max-h-[92vh]" @click.outside="modalSql = false">
+        
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+              ⚡
+            </div>
+            <div>
+              <h3 class="font-extrabold text-lg text-slate-900">Setup Database Supabase (1 Menit)</h3>
+              <p class="text-xs text-slate-500">Jalankan SQL ini sekali di dashboard Supabase agar data otomatis muncul di semua device.</p>
+            </div>
+          </div>
+          <button @click="modalSql = false" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none p-1">&times;</button>
+        </div>
+
+        <div class="mt-4 space-y-4 text-xs">
+          <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-900 leading-relaxed">
+            <strong>Langkah Mudah:</strong>
+            <ol class="list-decimal list-inside mt-1 space-y-1">
+              <li>Klik tombol <strong>"Salin Script SQL"</strong> di bawah.</li>
+              <li>Buka <a href="https://supabase.com/dashboard/project/jaizwaoqbqykvyvdxjyj/sql/new" target="_blank" class="underline font-bold text-indigo-700 hover:text-indigo-900">Supabase SQL Editor (Klik Disini)</a>.</li>
+              <li>Paste (Tempel) script SQL tersebut lalu klik <strong>"Run"</strong>.</li>
+              <li>Selesai! Klik tombol <strong>"Cek Ulang Koneksi"</strong> di bawah.</li>
+            </ol>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-bold text-slate-700">Script SQL DDL Supabase:</span>
+              <button @click="salinSqlScript()" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition flex items-center space-x-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                <span x-text="copiedSql ? 'Tersalin!' : 'Salin Script SQL'"></span>
+              </button>
+            </div>
+            <pre class="bg-slate-900 text-emerald-400 p-4 rounded-xl font-mono text-[11px] overflow-x-auto max-h-60 select-all leading-relaxed" x-text="sqlScriptText"></pre>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <a href="https://supabase.com/dashboard/project/jaizwaoqbqykvyvdxjyj/sql/new" target="_blank" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline flex items-center space-x-1">
+            <span>Buka Dashboard SQL Supabase &rarr;</span>
+          </a>
+          <div class="flex items-center space-x-2">
+            <button @click="loadDataLaptops(true); modalSql = false" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center space-x-1">
+              <span>🔄 Cek Ulang Koneksi</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -854,8 +947,58 @@
     try {
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } catch(e) {
-      console.warn("Supabase client init error, using local mode:", e);
+      console.warn("Supabase client init error:", e);
     }
+
+    const SQL_SCHEMA = `-- Jalankan di SQL Editor Supabase:
+CREATE TABLE IF NOT EXISTS public.kriteria (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    kode VARCHAR(10) UNIQUE NOT NULL,
+    nama VARCHAR(100) NOT NULL,
+    tipe VARCHAR(10) CHECK (tipe IN ('Benefit', 'Cost')) NOT NULL,
+    satuan VARCHAR(50) NOT NULL,
+    keterangan TEXT,
+    default_rank INT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.laptops (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    nama VARCHAR(150) NOT NULL,
+    merek VARCHAR(50) NOT NULL,
+    status VARCHAR(20) CHECK (status IN ('ready', 'indent')) NOT NULL DEFAULT 'ready',
+    kategori_penggunaan VARCHAR(50) DEFAULT 'Umum',
+    harga NUMERIC(15, 2) NOT NULL,
+    cpu_score NUMERIC(6, 2) NOT NULL,
+    ram_gb INT NOT NULL,
+    ssd_gb INT NOT NULL,
+    gpu_score NUMERIC(6, 2) NOT NULL,
+    baterai_wh NUMERIC(6, 2) NOT NULL,
+    berat_kg NUMERIC(4, 2) NOT NULL,
+    layar_score NUMERIC(6, 2) NOT NULL,
+    spesifikasi_ringkas TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.kriteria ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.laptops ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public Read Kriteria" ON public.kriteria FOR SELECT USING (true);
+CREATE POLICY "Public Read Laptops" ON public.laptops FOR SELECT USING (true);
+CREATE POLICY "Public Insert Laptops" ON public.laptops FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Update Laptops" ON public.laptops FOR UPDATE USING (true);
+CREATE POLICY "Public Delete Laptops" ON public.laptops FOR DELETE USING (true);
+
+INSERT INTO public.kriteria (kode, nama, tipe, satuan, keterangan, default_rank) VALUES
+('C1', 'Harga Beli', 'Cost', 'Rupiah', 'Budget harga pembelian laptop', 1),
+('C2', 'Processor (CPU)', 'Benefit', 'Skor 0-100', 'Performa komputasi inti', 2),
+('C3', 'Kapasitas RAM', 'Benefit', 'GB', 'Memori multitasking', 3),
+('C4', 'Kapasitas SSD', 'Benefit', 'GB', 'Penyimpanan file dan sistem', 4),
+('C5', 'Kartu Grafis (GPU)', 'Benefit', 'Skor 0-100', 'Rendering visual & gaming', 5),
+('C6', 'Daya Tahan Baterai', 'Benefit', 'Wh', 'Durasi pemakaian tanpa charger', 6),
+('C7', 'Portabilitas (Berat)', 'Cost', 'Kg', 'Bobot fisik mobilitas laptop', 7),
+('C8', 'Kualitas Layar', 'Benefit', 'Skor 0-100', 'Panel layar, warna, dan refresh rate', 8)
+ON CONFLICT (kode) DO NOTHING;`;
 
     // DATA CONTOH SEED DEFAULT
     const SEED_LAPTOPS = [
@@ -953,13 +1096,17 @@
 
     function spkApp() {
       return {
-        dbStatus: 'online', // 'online' | 'local'
+        dbStatus: 'checking', // 'online' | 'table_missing' | 'checking'
+        isLoading: false,
         modalInput: false,
         modalMatriks: false,
+        modalSql: false,
+        copiedSql: false,
         isEditMode: false,
         isSaving: false,
         filterStatus: 'all',
         toasts: [],
+        sqlScriptText: SQL_SCHEMA,
         
         kriteriaList: [
           { id: 1, kode: 'C1', nama: 'Harga Beli', tipe: 'Cost', rank: 1, bobot: 0, keterangan: 'Nominal harga beli toko (makin hemat makin prioritas)' },
@@ -995,7 +1142,7 @@
 
         async init() {
           this.hitungBobotROC();
-          await this.loadDataLaptops();
+          await this.loadDataLaptops(false);
           if (this.laptopsData.length > 0) {
             this.kalkulasiTOPSIS(false);
           }
@@ -1005,18 +1152,23 @@
         showToast(message, type = 'success') {
           const id = Date.now();
           this.toasts.push({ id, message, type });
-          setTimeout(() => this.removeToast(id), 4000);
+          setTimeout(() => this.removeToast(id), 4500);
         },
         removeToast(id) {
           this.toasts = this.toasts.filter(t => t.id !== id);
+        },
+
+        salinSqlScript() {
+          navigator.clipboard.writeText(this.sqlScriptText);
+          this.copiedSql = true;
+          this.showToast("Script SQL berhasil disalin! Buka menu SQL Editor Supabase untuk menjalankannya.", "success");
+          setTimeout(() => this.copiedSql = false, 3000);
         },
 
         // 1. HITUNG BOBOT ROC (Rank Order Centroid)
         // Rumus: w_i = (1/m) * sum_{k=i}^m (1/k)
         hitungBobotROC() {
           const m = this.kriteriaList.length;
-          
-          // Urutkan berdasarkan peringkat prioritas 1 s/d 8
           const sorted = [...this.kriteriaList].sort((a, b) => a.rank - b.rank);
 
           sorted.forEach((item, index) => {
@@ -1038,8 +1190,9 @@
           this.hitungUlangJikaAdaHasil();
         },
 
-        // 2. BACA DATA LAPTOP DARI SUPABASE DENGAN FALLBACK LOCALSTORAGE
-        async loadDataLaptops() {
+        // 2. BACA DATA LAPTOP DARI SUPABASE DENGAN VERIFIKASI CLOUD
+        async loadDataLaptops(showFeedback = false) {
+          this.isLoading = true;
           try {
             if (supabaseClient) {
               const { data, error } = await supabaseClient
@@ -1047,19 +1200,36 @@
                 .select('*')
                 .order('id', { ascending: false });
 
-              if (error) throw error;
-              
-              this.laptopsData = data || [];
-              this.dbStatus = 'online';
-              localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
-              return;
+              if (error) {
+                // Table doesn't exist yet or permission error
+                if (error.code === 'PGRST205' || error.message.includes('Could not find the table') || error.message.includes('relation') || error.message.includes('schema cache')) {
+                  this.dbStatus = 'table_missing';
+                  if (showFeedback) {
+                    this.showToast("Tabel 'laptops' belum dibuat di Supabase! Klik banner di atas untuk setup SQL.", "warning");
+                    this.modalSql = true;
+                  }
+                } else {
+                  throw error;
+                }
+              } else {
+                this.dbStatus = 'online';
+                this.laptopsData = data || [];
+                localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
+                if (showFeedback) {
+                  this.showToast(`Berhasil tersinkron! Dimuat ${this.laptopsData.length} laptop dari Supabase Cloud.`, "success");
+                }
+                this.isLoading = false;
+                return;
+              }
             }
           } catch (err) {
             console.warn("Supabase connect error:", err.message);
-            this.dbStatus = 'local';
+            if (showFeedback) {
+              this.showToast("Gagal koneksi ke Supabase: " + err.message, "error");
+            }
           }
 
-          // Fallback Local Storage
+          // Fallback Local Storage if Supabase table is not yet ready
           const local = localStorage.getItem('spk_laptops_backup');
           if (local) {
             try {
@@ -1068,6 +1238,7 @@
               this.laptopsData = [];
             }
           }
+          this.isLoading = false;
         },
 
         // 3. FORM MODAL CONTROLS
@@ -1098,7 +1269,7 @@
           this.modalInput = true;
         },
 
-        // 4. SIMPAN DATA LAPTOP (CREATE & UPDATE)
+        // 4. SIMPAN DATA LAPTOP (CREATE & UPDATE DENGAN SYNC CLOUD)
         async simpanLaptop() {
           this.isSaving = true;
           const payload = {
@@ -1117,10 +1288,10 @@
             spesifikasi_ringkas: this.formLaptop.spesifikasi_ringkas || ''
           };
 
-          let success = false;
+          let savedToSupabase = false;
 
           try {
-            if (this.dbStatus === 'online' && supabaseClient) {
+            if (supabaseClient) {
               if (this.isEditMode && this.formLaptop.id) {
                 const { error } = await supabaseClient
                   .from('laptops')
@@ -1133,34 +1304,40 @@
                   .insert([payload]);
                 if (error) throw error;
               }
-              success = true;
+              savedToSupabase = true;
+              this.dbStatus = 'online';
             }
           } catch (err) {
-            console.error("Gagal simpan ke Supabase:", err.message);
-            this.showToast("Gagal sinkronisasi Supabase, menyimpan ke cache lokal: " + err.message, "error");
-          }
-
-          // Local state management
-          if (this.isEditMode && this.formLaptop.id) {
-            const index = this.laptopsData.findIndex(l => l.id === this.formLaptop.id);
-            if (index !== -1) {
-              this.laptopsData[index] = { ...this.formLaptop, ...payload };
+            console.error("Gagal simpan ke Supabase:", err);
+            if (err.code === 'PGRST205' || err.message.includes('Could not find the table') || err.message.includes('schema cache')) {
+              this.dbStatus = 'table_missing';
+              this.showToast("⚠️ Tabel Supabase belum dibuat! Jalankan script SQL di dashboard Supabase agar data otomatis muncul di semua device.", "warning");
+              this.modalSql = true;
+            } else {
+              this.showToast("⚠️ Gagal simpan ke Supabase: " + err.message + ". Tersimpan ke cache lokal.", "error");
             }
-            this.showToast("Data laptop '" + payload.nama + "' berhasil diperbarui!");
-          } else {
-            const newId = Date.now();
-            const newItem = { id: newId, ...payload };
-            this.laptopsData.unshift(newItem);
-            this.showToast("Laptop '" + payload.nama + "' berhasil ditambahkan!");
           }
 
-          localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
+          if (savedToSupabase) {
+            this.showToast(`✅ Data laptop "${payload.nama}" berhasil tersimpan ke Supabase Cloud & tersinkron di semua device!`, "success");
+            await this.loadDataLaptops(false);
+          } else {
+            // Local state management fallback
+            if (this.isEditMode && this.formLaptop.id) {
+              const index = this.laptopsData.findIndex(l => l.id === this.formLaptop.id);
+              if (index !== -1) {
+                this.laptopsData[index] = { ...this.formLaptop, ...payload };
+              }
+            } else {
+              const newId = Date.now();
+              const newItem = { id: newId, ...payload };
+              this.laptopsData.unshift(newItem);
+            }
+            localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
+          }
+
           this.modalInput = false;
           this.isSaving = false;
-
-          if (this.dbStatus === 'online') {
-            await this.loadDataLaptops();
-          }
 
           if (this.laptopsData.length > 0) {
             this.kalkulasiTOPSIS(false);
@@ -1171,18 +1348,25 @@
         async hapusLaptop(id, nama) {
           if (!confirm(`Apakah Anda yakin ingin menghapus data laptop "${nama}"?`)) return;
 
+          let deletedFromSupabase = false;
           try {
-            if (this.dbStatus === 'online' && supabaseClient) {
+            if (supabaseClient && this.dbStatus === 'online') {
               const { error } = await supabaseClient.from('laptops').delete().eq('id', id);
               if (error) throw error;
+              deletedFromSupabase = true;
             }
           } catch (err) {
             console.warn("Hapus Supabase error:", err.message);
           }
 
-          this.laptopsData = this.laptopsData.filter(l => l.id !== id);
-          localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
-          this.showToast(`Laptop "${nama}" berhasil dihapus.`, "info");
+          if (deletedFromSupabase) {
+            this.showToast(`Laptop "${nama}" berhasil dihapus dari Supabase Cloud!`, "info");
+            await this.loadDataLaptops(false);
+          } else {
+            this.laptopsData = this.laptopsData.filter(l => l.id !== id);
+            localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
+            this.showToast(`Laptop "${nama}" berhasil dihapus.`, "info");
+          }
           
           if (this.laptopsData.length > 0) {
             this.kalkulasiTOPSIS(false);
@@ -1194,26 +1378,32 @@
         // 6. SEED DEMO DATA
         async seedDataContoh() {
           if (this.laptopsData.length > 0) {
-            if (!confirm("Tambahkan data demo contoh ke daftar laptop yang ada?")) return;
+            if (!confirm("Tambahkan 6 data demo contoh ke daftar laptop yang ada?")) return;
           }
 
-          let insertedCount = 0;
-          for (const item of SEED_LAPTOPS) {
-            try {
-              if (this.dbStatus === 'online' && supabaseClient) {
-                await supabaseClient.from('laptops').insert([item]);
+          let insertedSupabase = false;
+          try {
+            if (supabaseClient) {
+              const { error } = await supabaseClient.from('laptops').insert(SEED_LAPTOPS);
+              if (!error) {
+                insertedSupabase = true;
+                this.dbStatus = 'online';
+              } else if (error.code === 'PGRST205' || error.message.includes('Could not find the table')) {
+                this.dbStatus = 'table_missing';
+                this.modalSql = true;
               }
-            } catch(e) {}
-            
-            this.laptopsData.push({ id: Date.now() + Math.floor(Math.random()*1000), ...item });
-            insertedCount++;
-          }
+            }
+          } catch(e) {}
 
-          localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
-          this.showToast(`${insertedCount} data laptop demo berhasil dimuat!`);
-          
-          if (this.dbStatus === 'online') {
-            await this.loadDataLaptops();
+          if (insertedSupabase) {
+            this.showToast("6 data laptop demo berhasil disimpan ke Supabase Cloud!", "success");
+            await this.loadDataLaptops(false);
+          } else {
+            for (const item of SEED_LAPTOPS) {
+              this.laptopsData.push({ id: Date.now() + Math.floor(Math.random()*10000), ...item });
+            }
+            localStorage.setItem('spk_laptops_backup', JSON.stringify(this.laptopsData));
+            this.showToast("6 data laptop demo dimuat ke cache lokal.", "info");
           }
 
           this.kalkulasiTOPSIS(true);

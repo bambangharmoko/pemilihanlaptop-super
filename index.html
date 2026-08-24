@@ -241,7 +241,7 @@
             <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">1</span>
             <h2 class="text-base sm:text-lg font-bold text-slate-900">Atur Prioritas Kriteria Kepentingan (ROC)</h2>
           </div>
-          <p class="text-xs text-slate-500 mt-1 pl-8">Ubah urutan peringkat prioritas (1 = Terpenting, 8 = Terendah). Bobot dihitung otomatis oleh formula harmonik ROC.</p>
+          <p class="text-xs text-slate-500 mt-1 pl-8">Ubah urutan peringkat prioritas (1 = Terpenting, 8 = Terendah). Bobot dan perankingan diperbarui otomatis secara real-time.</p>
         </div>
         <div class="flex items-center space-x-2 self-start sm:self-auto pl-8 sm:pl-0">
           <button @click="resetPrioritas()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50/60 hover:bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 transition flex items-center space-x-1">
@@ -276,7 +276,7 @@
               <div class="flex items-center justify-between mb-1.5">
                 <label class="text-[11px] font-semibold text-slate-500">Peringkat Kepentingan:</label>
               </div>
-              <select x-model.number="item.rank" @change="hitungBobotROC()" 
+              <select x-model.number="item.rank" @change="onRankChange()" 
                       class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
                 <template x-for="n in 8" :key="n">
                   <option :value="n" x-text="'Rank ' + n + (n === 1 ? ' (Paling Utama)' : (n === 8 ? ' (Terendah)' : ''))"></option>
@@ -299,13 +299,13 @@
         <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <span class="text-xs font-bold text-slate-700 mr-1">Filter Ketersediaan:</span>
           <div class="inline-flex rounded-xl border border-slate-200 bg-slate-100/80 p-1 text-xs">
-            <button @click="filterStatus = 'all'; hitungUlangJikaAdaHasil()" 
+            <button @click="setFilter('all')" 
                     :class="filterStatus === 'all' ? 'bg-white shadow-xs text-slate-900 font-bold' : 'text-slate-600 font-medium hover:text-slate-900'" 
                     class="px-3 py-1.5 rounded-lg transition">Semua (<span x-text="laptopsData.length"></span>)</button>
-            <button @click="filterStatus = 'ready'; hitungUlangJikaAdaHasil()" 
+            <button @click="setFilter('ready')" 
                     :class="filterStatus === 'ready' ? 'bg-white shadow-xs text-emerald-700 font-bold' : 'text-slate-600 font-medium hover:text-emerald-700'" 
                     class="px-3 py-1.5 rounded-lg transition">Ready Toko (<span x-text="laptopsData.filter(l => l.status === 'ready').length"></span>)</button>
-            <button @click="filterStatus = 'indent'; hitungUlangJikaAdaHasil()" 
+            <button @click="setFilter('indent')" 
                     :class="filterStatus === 'indent' ? 'bg-white shadow-xs text-amber-700 font-bold' : 'text-slate-600 font-medium hover:text-amber-700'" 
                     class="px-3 py-1.5 rounded-lg transition">Indent (<span x-text="laptopsData.filter(l => l.status === 'indent').length"></span>)</button>
           </div>
@@ -313,7 +313,7 @@
 
         <!-- Action Calculate -->
         <div class="flex items-center space-x-2.5 w-full md:w-auto justify-end">
-          <button @click="kalkulasiTOPSIS()" 
+          <button @click="kalkulasiTOPSIS(true)" 
                   :disabled="laptopsData.length === 0"
                   class="w-full md:w-auto px-7 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-indigo-200 hover:shadow-indigo-300 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2">
             <svg class="w-4 h-4 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
@@ -358,8 +358,8 @@
 
         <div class="flex flex-wrap items-center gap-2 pl-8 sm:pl-0 no-print">
           <!-- Button Detail Perhitungan Matrix -->
-          <button @click="modalMatriks = true" class="text-xs font-semibold px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition flex items-center space-x-1.5">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          <button @click="modalMatriks = true" class="text-xs font-semibold px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition flex items-center space-x-1.5 shadow-2xs">
+            <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
             <span>Detail Matriks Hitung</span>
           </button>
           <!-- Button Export CSV -->
@@ -785,24 +785,39 @@
     <div x-show="modalMatriks" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm no-print" x-transition>
       <div class="bg-white rounded-2xl max-w-5xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 overflow-y-auto max-h-[92vh]" @click.outside="modalMatriks = false">
         
-        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
           <div>
             <h3 class="font-extrabold text-lg text-slate-900">Transparansi Perhitungan Matematis TOPSIS</h3>
             <p class="text-xs text-slate-500">Detail matriks keputusan ternormalisasi (R), matriks terbobot (Y), dan solusi ideal (A+ / A-).</p>
           </div>
-          <button @click="modalMatriks = false" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none p-1">&times;</button>
+          <div class="flex items-center space-x-2">
+            <span class="text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full flex items-center space-x-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Sync Real-Time Bobot ROC</span>
+            </span>
+            <button @click="modalMatriks = false" class="text-slate-400 hover:text-slate-700 text-2xl font-bold leading-none p-1">&times;</button>
+          </div>
         </div>
 
         <div class="mt-4 space-y-6 text-xs" x-show="matriksData">
           
           <!-- Matriks Bobot ROC -->
           <div class="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
-            <h4 class="font-bold text-indigo-900 text-xs mb-2">1. Vektor Bobot Kriteria ROC ($w_j$):</h4>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="flex items-center justify-between mb-2.5">
+              <h4 class="font-bold text-indigo-900 text-xs">1. Vektor Bobot Kriteria ROC Terkalkulasi ($w_j$):</h4>
+              <span class="text-[11px] text-indigo-600 font-bold bg-indigo-100/70 px-2 py-0.5 rounded">Total Bobot: 100.00%</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <template x-for="k in kriteriaList" :key="k.id">
-                <div class="bg-white p-2 rounded-lg border border-indigo-100 flex justify-between">
-                  <span class="font-bold text-slate-700" x-text="k.kode + ' (' + k.tipe + ')'"></span>
-                  <span class="font-mono font-bold text-indigo-600" x-text="k.bobot.toFixed(4)"></span>
+                <div class="bg-white p-2.5 rounded-lg border border-indigo-100 flex flex-col justify-between shadow-2xs">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-800" x-text="k.kode"></span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded font-bold" :class="k.tipe === 'Cost' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'" x-text="k.tipe"></span>
+                  </div>
+                  <div class="mt-1.5 flex items-center justify-between text-[11px]">
+                    <span class="text-slate-500 font-semibold" x-text="'Rank #' + k.rank"></span>
+                    <span class="font-mono font-bold text-indigo-600" x-text="(k.bobot * 100).toFixed(2) + '%'"></span>
+                  </div>
                 </div>
               </template>
             </div>
@@ -847,7 +862,10 @@
 
           <!-- Matriks Terbobot Y -->
           <div>
-            <h4 class="font-bold text-slate-900 text-xs mb-2">3. Matriks Ternormalisasi Terbobot ($y_{ij} = w_j \cdot r_{ij}$):</h4>
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="font-bold text-slate-900 text-xs">3. Matriks Ternormalisasi Terbobot ($y_{ij} = w_j \cdot r_{ij}$):</h4>
+              <span class="text-[11px] text-slate-500 italic">Otomatis berubah mengikuti perubahan bobot ROC</span>
+            </div>
             <div class="overflow-x-auto border border-slate-200 rounded-xl">
               <table class="w-full text-left text-xs font-mono">
                 <thead class="bg-slate-50 font-bold text-slate-700 border-b border-slate-200">
@@ -867,14 +885,14 @@
                   <template x-for="row in (matriksData ? matriksData.matrixY : [])" :key="row.id">
                     <tr class="hover:bg-slate-50">
                       <td class="p-2.5 font-sans font-semibold text-slate-800" x-text="row.nama"></td>
-                      <td class="p-2.5 text-center" x-text="row.y1.toFixed(4)"></td>
-                      <td class="p-2.5 text-center" x-text="row.y2.toFixed(4)"></td>
-                      <td class="p-2.5 text-center" x-text="row.y3.toFixed(4)"></td>
-                      <td class="p-2.5 text-center" x-text="row.y4.toFixed(4)"></td>
-                      <td class="p-2.5 text-center" x-text="row.y5.toFixed(4)"></td>
-                      <td class="p-2.5 text-center" x-text="row.y6.toFixed(4)"></td>
-                      <td class="p-2.5 text-center" x-text="row.y7.toFixed(4)"></td>
-                      <td class="p-2.5 text-center" x-text="row.y8.toFixed(4)"></td>
+                      <td class="p-2.5 text-center font-bold text-indigo-700" x-text="row.y1.toFixed(4)"></td>
+                      <td class="p-2.5 text-center font-bold text-indigo-700" x-text="row.y2.toFixed(4)"></td>
+                      <td class="p-2.5 text-center font-bold text-indigo-700" x-text="row.y3.toFixed(4)"></td>
+                      <td class="p-2.5 text-center font-bold text-indigo-700" x-text="row.y4.toFixed(4)"></td>
+                      <td class="p-2.5 text-center font-bold text-indigo-700" x-text="row.y5.toFixed(4)"></td>
+                      <td class="p-2.5 text-center font-bold text-indigo-700" x-text="row.y6.toFixed(4)"></td>
+                      <td class="p-2.5 text-center font-bold text-indigo-700" x-text="row.y7.toFixed(4)"></td>
+                      <td class="p-2.5 text-center font-bold text-indigo-700" x-text="row.y8.toFixed(4)"></td>
                     </tr>
                   </template>
                 </tbody>

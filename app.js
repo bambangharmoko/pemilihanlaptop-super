@@ -1,6 +1,7 @@
 /**
  * APP ENGINE - Toko Super Komputer
- * Logika Aplikasi SPK: Alpine.js Store, Metode Pembobotan ROC, Algoritma TOPSIS, dan UI Handler
+ * Logika Aplikasi SPK: Alpine.js Store, Metode Pembobotan ROC Dinamis, Algoritma TOPSIS,
+ * Penyimpanan Pengaturan Lokal (Persistensi Ranks & Filter), dan UI Handlers
  */
 
 // Dataset Laptop Demo Default
@@ -109,6 +110,7 @@ function spkApp() {
     isSaving: false,
     filterStatus: 'all',
     toasts: [],
+    lastCalculatedAt: null,
     sqlScriptText: window.SupabaseService ? window.SupabaseService.SQL_SCHEMA : '',
     
     // Master 8 Kriteria Keputusan
@@ -145,10 +147,55 @@ function spkApp() {
     },
 
     async init() {
+      // 1. Muat pengaturan yang tersimpan di localStorage (Ranks & Filter)
+      this.loadSavedSettings();
+
+      // 2. Hitung bobot ROC awal
       this.hitungBobotROC();
+
+      // 3. Ambil data dari Supabase
       await this.loadDataLaptops(false);
+
+      // 4. Kalkulasi TOPSIS otomatis jika ada data
       if (this.laptopsData.length > 0) {
         this.kalkulasiTOPSIS(false);
+      }
+    },
+
+    // MEMUAT & MENYIMPAN PENGATURAN LOKAL (PERSISTENSI SETELAH REFRESH)
+    loadSavedSettings() {
+      // Muat Filter Terakhir
+      const savedFilter = localStorage.getItem('spk_filter_status');
+      if (savedFilter && ['all', 'ready', 'indent'].includes(savedFilter)) {
+        this.filterStatus = savedFilter;
+      }
+
+      // Muat Prioritas Rank ROC Terakhir
+      const savedRanks = localStorage.getItem('spk_criteria_ranks');
+      if (savedRanks) {
+        try {
+          const parsed = JSON.parse(savedRanks);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(saved => {
+              const target = this.kriteriaList.find(k => k.id === saved.id || k.kode === saved.kode);
+              if (target && typeof saved.rank === 'number' && saved.rank >= 1 && saved.rank <= 8) {
+                target.rank = saved.rank;
+              }
+            });
+          }
+        } catch(e) {
+          console.warn("Gagal memuat setting prioritas tersimpan:", e);
+        }
+      }
+    },
+
+    saveSettings() {
+      try {
+        localStorage.setItem('spk_filter_status', this.filterStatus);
+        const ranksToSave = this.kriteriaList.map(k => ({ id: k.id, kode: k.kode, rank: k.rank }));
+        localStorage.setItem('spk_criteria_ranks', JSON.stringify(ranksToSave));
+      } catch(e) {
+        console.warn("Gagal menyimpan setting ke localStorage:", e);
       }
     },
 
@@ -172,28 +219,73 @@ function spkApp() {
     },
 
     // 1. RUMUS PEMBOBOTAN METODE ROC (Rank Order Centroid)
-    // Formula: w_i = (1 / m) * sum_{k=i}^m (1 / k)
+    // Formula Harmonis: w_i = (1 / m) * sum_{k=i}^m (1 / k)
+    // Dilengkapi penanganan rank kembar (average harmonic centroid) agar total sum = 100.00%
     hitungBobotROC() {
       const m = this.kriteriaList.length;
       const sorted = [...this.kriteriaList].sort((a, b) => a.rank - b.rank);
 
-      sorted.forEach((item, index) => {
-        const rankIndex = index + 1;
-        let harmonicSum = 0;
-        for (let k = rankIndex; k <= m; k++) {
-          harmonicSum += (1 / k);
+      let currentPos = 1;
+      let i = 0;
+      while (i < sorted.length) {
+        let j = i;
+        while (j < sorted.length && sorted[j].rank === sorted[i].rank) {
+          j++;
         }
-        const weight = harmonicSum / m;
-        const target = this.kriteriaList.find(k => k.id === item.id);
-        if (target) target.bobot = weight;
-      });
+        const groupCount = j - i;
+        
+        let groupWeightSum = 0;
+        for (let p = currentPos; p < currentPos + groupCount; p++) {
+          let harmonicSum = 0;
+          for (let k = p; k <= m; k++) {
+            harmonicSum += (1 / k);
+          }
+          groupWeightSum += harmonicSum / m;
+        }
+        const avgWeight = groupWeightSum / groupCount;
+
+        for (let k = i; k < j; k++) {
+          const target = this.kriteriaList.find(item => item.id === sorted[k].id);
+          if (target) target.bobot = avgWeight;
+        }
+
+        currentPos += groupCount;
+        i = j;
+      }
+    },
+
+    // Handler ketika pengguna mengubah rank pada dropdown kriteria
+    onRankChange() {
+      this.hitungBobotROC();
+      this.saveSettings();
+      
+      // Otomatis kalkulasi ulang TOPSIS & detail matriks secara real-time
+      if (this.laptopsData.length > 0) {
+        this.kalkulasiTOPSIS(false);
+      }
+    },
+
+    // Handler ketika pengguna mengubah filter status ketersediaan
+    setFilter(status) {
+      this.filterStatus = status;
+      this.saveSettings();
+      if (this.laptopsData.length > 0) {
+        this.kalkulasiTOPSIS(false);
+      }
     },
 
     resetPrioritas() {
       this.kriteriaList.forEach((item, i) => item.rank = i + 1);
+      try {
+        localStorage.removeItem('spk_criteria_ranks');
+      } catch(e) {}
       this.hitungBobotROC();
+      this.saveSettings();
       this.showToast("Prioritas kriteria dikembalikan ke pengaturan awal.", "info");
-      this.hitungUlangJikaAdaHasil();
+      
+      if (this.laptopsData.length > 0) {
+        this.kalkulasiTOPSIS(false);
+      }
     },
 
     // 2. MEMUAT DATA LAPTOP MELALUI SUPABASE SERVICE
@@ -222,7 +314,7 @@ function spkApp() {
         }
       }
 
-      // Fallback Local Storage
+      // Fallback Local Storage jika Supabase belum siap
       const local = localStorage.getItem('spk_laptops_backup');
       if (local) {
         try {
@@ -371,14 +463,9 @@ function spkApp() {
       this.kalkulasiTOPSIS(true);
     },
 
-    hitungUlangJikaAdaHasil() {
-      if (this.hasilRanking.length > 0) {
-        this.kalkulasiTOPSIS(false);
-      }
-    },
-
-    // 7. KOMPUTASI ALGORITMA TOPSIS
+    // 7. KOMPUTASI ALGORITMA TOPSIS LENGKAP
     kalkulasiTOPSIS(scroll = true) {
+      // 1. Pastikan bobot ROC dihitung dari rank kriteria saat ini
       this.hitungBobotROC();
 
       let dataset = [...this.laptopsData];
@@ -387,8 +474,11 @@ function spkApp() {
       }
 
       if (dataset.length === 0) {
-        this.showToast("Tidak ada laptop pada filter ini untuk dikalkulasi.", "error");
+        if (scroll) {
+          this.showToast("Tidak ada laptop pada filter ini untuk dikalkulasi.", "error");
+        }
         this.hasilRanking = [];
+        this.matriksData = null;
         return;
       }
 
@@ -421,7 +511,7 @@ function spkApp() {
         r8: Number(d.layar_score) / pembagi.c8,
       }));
 
-      // C. Normalisasi Terbobot (Matrix Y): y_ij = w_j * r_ij
+      // C. Normalisasi Terbobot (Matrix Y): y_ij = w_j * r_ij (REAL-TIME MENGIKUTI BOBOT ROC TERBARU)
       const matrixY = dataset.map(d => {
         const r = matrixR.find(item => item.id === d.id);
         return {
@@ -439,7 +529,8 @@ function spkApp() {
       });
 
       // D. Solusi Ideal Positif (A+) dan Solusi Ideal Negatif (A-)
-      // C1 & C7 (Cost)   -> A+ min, A- max
+      // C1 (Cost)   -> A+ min, A- max
+      // C7 (Cost)   -> A+ min, A- max
       // C2..C6, C8 (Benefit) -> A+ max, A- min
       const APlus = {
         y1: Math.min(...matrixY.map(m => m.y1)),
@@ -494,13 +585,16 @@ function spkApp() {
       // Urutkan alternatif berdasarkan nilai Vi tertinggi (Descending)
       this.hasilRanking = hasil.sort((a, b) => b.skorVi - a.skorVi);
 
-      // Simpan data kalkulasi untuk modal matriks
+      // Simpan data kalkulasi matriks lengkap untuk modal transparansi
       this.matriksData = {
         matrixR,
         matrixY,
         APlus,
-        AMinus
+        AMinus,
+        calculatedRanks: this.kriteriaList.map(k => ({ kode: k.kode, rank: k.rank, bobot: k.bobot }))
       };
+
+      this.lastCalculatedAt = new Date().toLocaleTimeString('id-ID');
 
       if (scroll) {
         this.showToast("Kalkulasi TOPSIS selesai dievaluasi!");

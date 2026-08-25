@@ -1218,31 +1218,32 @@ function spkApp() {
       return Array.from(set).sort();
     },
 
-    // Single Source of Truth untuk Dataset Kandidat Laptop Berdasarkan Filter
+    // Single Source of Truth untuk Dataset Kandidat Laptop Berdasarkan Filter & Preferensi Spek
     getFilteredCandidates() {
       let dataset = [...this.laptopsData];
+      const form = this.konsultasiForm;
 
-      // Filter Status Ketersediaan
+      // 1. Filter Status Ketersediaan
       if (this.filterStatus !== 'all') {
         dataset = dataset.filter(l => l.status === this.filterStatus);
       }
 
-      // Filter Merk / Brand Laptop
+      // 2. Filter Merk / Brand Laptop
       if (this.brandFilter && this.brandFilter !== 'all') {
         dataset = dataset.filter(l => l.merek && l.merek.toLowerCase() === this.brandFilter.toLowerCase());
       }
 
-      // Filter Kategori Penggunaan
+      // 3. Filter Kategori Penggunaan
       if (this.kategoriFilter && this.kategoriFilter !== 'all') {
         dataset = dataset.filter(l => l.kategori_penggunaan && l.kategori_penggunaan.toLowerCase() === this.kategoriFilter.toLowerCase());
       }
 
-      // Filter Batas Maksimal Budget
+      // 4. Filter Batas Maksimal Budget (Kriteria C1 - Harga)
       if (this.budgetMaxFilter && Number(this.budgetMaxFilter) > 0) {
         dataset = dataset.filter(l => Number(l.harga) <= Number(this.budgetMaxFilter));
       }
 
-      // Filter Pencarian Nama / Seri / Spek
+      // 5. Filter Pencarian Nama / Seri / Spek
       if (this.searchQuery && this.searchQuery.trim() !== '') {
         const q = this.searchQuery.toLowerCase().trim();
         dataset = dataset.filter(l => 
@@ -1250,6 +1251,80 @@ function spkApp() {
           (l.merek && l.merek.toLowerCase().includes(q)) ||
           (l.spesifikasi_ringkas && l.spesifikasi_ringkas.toLowerCase().includes(q))
         );
+      }
+
+      // 6. SCREENING KONSULTASI SPESIFIKASI TEKNIS (Hard Requirements Filter)
+      // Memastikan laptop kandidat benar-benar memenuhi syarat spesifikasi yang dipilih customer
+
+      // C2: Kecepatan Prosesor CPU
+      if (form.kebutuhanCPU === 'high') {
+        dataset = dataset.filter(l => Number(l.cpu_score) >= 90);
+      } else if (form.kebutuhanCPU === 'mid') {
+        dataset = dataset.filter(l => Number(l.cpu_score) >= 80);
+      } else if (form.kebutuhanCPU === 'entry') {
+        dataset = dataset.filter(l => Number(l.cpu_score) >= 60);
+      }
+
+      // C3: Kapasitas RAM
+      if (form.kebutuhanRAM && form.kebutuhanRAM !== 'all') {
+        const minRam = Number(form.kebutuhanRAM);
+        if (minRam > 0) dataset = dataset.filter(l => Number(l.ram_gb) >= minRam);
+      }
+
+      // C4: Kapasitas Penyimpanan SSD
+      if (form.kebutuhanSSD && form.kebutuhanSSD !== 'all') {
+        const minSsd = Number(form.kebutuhanSSD);
+        if (minSsd > 0) dataset = dataset.filter(l => Number(l.ssd_gb) >= minSsd);
+      }
+
+      // C5: Kemampuan Grafis & Game GPU
+      if (form.kebutuhanGPU === 'high_discrete') {
+        // Khusus GPU High-End (RTX 4060, 4070, 4080, 4090): wajib dedicated GPU High-End
+        dataset = dataset.filter(l => Number(l.gpu_score) >= 88);
+      } else if (form.kebutuhanGPU === 'entry_discrete') {
+        // Dedicated GPU Entry (GTX, RTX 2050, RTX 3050, RTX 4050)
+        dataset = dataset.filter(l => Number(l.gpu_score) >= 82);
+      }
+
+      // C6: Daya Tahan Baterai
+      if (form.kebutuhanBaterai === 'jumbo') {
+        dataset = dataset.filter(l => Number(l.baterai_wh) >= 75);
+      } else if (form.kebutuhanBaterai === 'awet') {
+        dataset = dataset.filter(l => Number(l.baterai_wh) >= 55);
+      } else if (form.kebutuhanBaterai === 'standar') {
+        dataset = dataset.filter(l => Number(l.baterai_wh) >= 35);
+      }
+
+      // C7: Bobot & Portabilitas
+      if (form.kebutuhanBobot === 'ultralight') {
+        dataset = dataset.filter(l => Number(l.berat_kg) <= 1.45);
+      } else if (form.kebutuhanBobot === 'standar') {
+        dataset = dataset.filter(l => Number(l.berat_kg) <= 1.85);
+      }
+
+      // C8: Kualitas Layar
+      if (form.kebutuhanLayar === 'oled') {
+        dataset = dataset.filter(l => Number(l.layar_score) >= 95);
+      } else if (form.kebutuhanLayar === 'akurat') {
+        dataset = dataset.filter(l => Number(l.layar_score) >= 85);
+      } else if (form.kebutuhanLayar === 'standar') {
+        dataset = dataset.filter(l => Number(l.layar_score) >= 70);
+      }
+
+      // C9: Garansi Resmi
+      if (form.kebutuhanGaransi === '3_tahun_adp') {
+        dataset = dataset.filter(l => Number(l.garansi_score || 3) >= 4);
+      } else if (form.kebutuhanGaransi === '2_tahun') {
+        dataset = dataset.filter(l => Number(l.garansi_score || 3) >= 3);
+      } else if (form.kebutuhanGaransi === '1_tahun') {
+        dataset = dataset.filter(l => Number(l.garansi_score || 3) >= 1);
+      }
+
+      // C10: Kemudahan Upgrade
+      if (form.kebutuhanUpgrade === 'dual_slot') {
+        dataset = dataset.filter(l => Number(l.upgrade_score || 3) >= 4);
+      } else if (form.kebutuhanUpgrade === 'ada_slot') {
+        dataset = dataset.filter(l => Number(l.upgrade_score || 3) >= 2);
       }
 
       return dataset;

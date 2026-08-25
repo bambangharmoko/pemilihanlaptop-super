@@ -463,9 +463,9 @@
 
         </div>
 
-        <!-- FILTER TAMBAHAN (MERK, PENCARIAN, STATUS STOK, & JUMLAH REKOMENDASI) -->
+        <!-- FILTER TAMBAHAN (MERK, PENCARIAN, & STATUS STOK) -->
         <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <!-- Filter Merk -->
             <div>
               <label class="block text-[11px] font-bold text-slate-700 mb-1">🏷️ Merk Laptop:</label>
@@ -493,19 +493,6 @@
                 <option value="all">Semua Stok</option>
                 <option value="ready">Ready di Toko</option>
                 <option value="indent">Indent / Pre-Order</option>
-              </select>
-            </div>
-
-            <!-- Limit Jumlah Rekomendasi Hasil -->
-            <div>
-              <label class="block text-[11px] font-bold text-slate-700 mb-1">🎯 Jumlah Rekomendasi:</label>
-              <select x-model="limitRekomendasi" @change="onFilterChange()"
-                      class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
-                <option value="3">Top 3 Laptop Terbaik</option>
-                <option value="5">Top 5 Laptop Terbaik (Standar)</option>
-                <option value="7">Top 7 Laptop Terbaik</option>
-                <option value="10">Top 10 Laptop Terbaik</option>
-                <option value="all">Semua Rekomendasi</option>
               </select>
             </div>
           </div>
@@ -616,6 +603,9 @@
             <button type="button" @click="limitRekomendasi = '5'; onFilterChange()" 
                     class="px-2 py-1 text-xs font-bold rounded-lg transition"
                     :class="limitRekomendasi == '5' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 5</button>
+            <button type="button" @click="limitRekomendasi = '7'; onFilterChange()" 
+                    class="px-2 py-1 text-xs font-bold rounded-lg transition"
+                    :class="limitRekomendasi == '7' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 7</button>
             <button type="button" @click="limitRekomendasi = '10'; onFilterChange()" 
                     class="px-2 py-1 text-xs font-bold rounded-lg transition"
                     :class="limitRekomendasi == '10' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 10</button>

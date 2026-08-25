@@ -1037,6 +1037,7 @@ function spkApp() {
 
     laptopsData: [],
     hasilRanking: [],
+    displayedHasilRanking: [],
     matriksData: null,
 
     // Form Model Input Laptop (Lengkap C1 - C10)
@@ -1330,20 +1331,28 @@ function spkApp() {
       return dataset;
     },
 
-    // Helper Pengambilan Hasil Ranking Berdasarkan Limit (Top 3 - 10 atau Semua)
-    getDisplayedHasilRanking() {
-      if (!this.hasilRanking || this.hasilRanking.length === 0) return [];
-      if (this.limitRekomendasi === 'all') return this.hasilRanking;
-      const num = parseInt(this.limitRekomendasi, 10) || 5;
-      return this.hasilRanking.slice(0, num);
+    // Helper & Sinkronisasi Tampilan Hasil Ranking Berdasarkan Limit (Top 3 - 10 atau Semua)
+    updateDisplayedRanking() {
+      if (!this.hasilRanking || this.hasilRanking.length === 0) {
+        this.displayedHasilRanking = [];
+        return;
+      }
+      if (this.limitRekomendasi === 'all') {
+        this.displayedHasilRanking = [...this.hasilRanking];
+      } else {
+        const num = parseInt(this.limitRekomendasi, 10) || 5;
+        this.displayedHasilRanking = this.hasilRanking.slice(0, num);
+      }
     },
 
-    // Callback saat limit rekomendasi dirubah oleh user
+    getDisplayedHasilRanking() {
+      return this.displayedHasilRanking;
+    },
+
+    // Callback saat limit rekomendasi dirubah oleh user (100% Instan Reaktif)
     setLimitRekomendasi(val) {
       this.limitRekomendasi = String(val);
-      if (this.hasCalculated) {
-        this.kalkulasiTOPSIS(false);
-      }
+      this.updateDisplayedRanking();
     },
 
     // Callback saat filter dirubah oleh user (HANYA kalkulasi ulang jika sudah pernah menekan tombol kalkulasi)
@@ -1552,6 +1561,7 @@ function spkApp() {
       this.limitRekomendasi = '5';
       this.hasCalculated = false;
       this.hasilRanking = [];
+      this.displayedHasilRanking = [];
       this.matriksData = null;
       this.translateKonsultasiToROC();
       this.showToast("Formulir kebutuhan telah direset ke setelan awal.", "info");
@@ -1944,6 +1954,7 @@ function spkApp() {
 
       // Urutkan alternatif berdasarkan nilai Vi tertinggi (Descending)
       this.hasilRanking = hasil.sort((a, b) => b.skorVi - a.skorVi);
+      this.updateDisplayedRanking();
 
       // Simpan data kalkulasi matriks lengkap untuk modal transparansi matematis skripsi
       this.matriksData = {

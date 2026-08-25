@@ -210,128 +210,260 @@
       </p>
     </div>
 
-    <!-- 1. ATUR PRIORITAS 10 KRITERIA (METODE ROC) -->
-    <section class="bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/90 shadow-sm mb-8 no-print">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-5 gap-3">
+    <!-- 1. KONSULTASI KEBUTUHAN & PEMBOBOTAN ROC -->
+    <section class="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-sm mb-8 no-print">
+      
+      <!-- Section Header with Mode Toggle -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-100 mb-5 gap-3">
         <div>
           <div class="flex items-center space-x-2">
             <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">1</span>
-            <h2 class="text-base sm:text-lg font-bold text-slate-900">Atur Prioritas 10 Kriteria Kepentingan (ROC)</h2>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Konsultasi Kebutuhan & Pembobotan Kriteria (ROC)</h2>
           </div>
-          <p class="text-xs text-slate-500 mt-1 pl-8">Ubah urutan peringkat prioritas (1 = Terpenting, 10 = Terendah). Tekan tombol <strong>"Kalkulasi Rekomendasi TOPSIS"</strong> untuk memproses hasil perankingan.</p>
+          <p class="text-xs text-slate-500 mt-1 pl-8">Jawab pertanyaan kebutuhan sehari-hari di bawah. Sistem akan secara otomatis menerjemahkannya ke peringkat prioritas <strong>Rank 1 s/d 10 (ROC)</strong>.</p>
         </div>
-        <div class="flex items-center space-x-2 self-start sm:self-auto pl-8 sm:pl-0">
-          <button @click="resetPrioritas()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50/60 hover:bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 transition flex items-center space-x-1">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-            <span>Reset Default (1 - 10)</span>
+        
+        <!-- Toggle Mode Button -->
+        <div class="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl text-xs font-bold self-start md:self-auto">
+          <button @click="consultationMode = 'interactive'"
+                  :class="consultationMode === 'interactive' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center space-x-1">
+            <span>💬 Kuesioner Konsultasi</span>
+          </button>
+          <button @click="consultationMode = 'manual'"
+                  :class="consultationMode === 'manual' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+                  class="px-3 py-1.5 rounded-lg transition flex items-center space-x-1">
+            <span>⚙️ Atur Manual 10 Rank</span>
           </button>
         </div>
       </div>
 
-      <!-- QUICK PRESET PROFIL KONSULTASI CUSTOMER TOKO SUPER KOMPUTER -->
-      <div class="mb-6 p-4.5 rounded-2xl bg-gradient-to-r from-indigo-50/80 via-sky-50/40 to-slate-50 border border-indigo-100 shadow-2xs">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3.5">
-          <div>
-            <div class="flex items-center space-x-1.5 text-[11px] font-extrabold uppercase tracking-wider text-indigo-700">
-              <span>🎯</span>
-              <span>Preset Cepat Profil Konsumen:</span>
+      <!-- MODE 1: KUESIONER KONSULTASI BAHASA SEHARI-HARI (DEFAULT / CUSTOMER-FRIENDLY) -->
+      <div x-show="consultationMode === 'interactive'" x-transition class="space-y-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          
+          <!-- PERTANYAAN 1: ANGGARAN / BUDGET PELANGGAN -->
+          <div class="p-4.5 rounded-2xl bg-gradient-to-br from-indigo-50/70 via-white to-slate-50 border border-indigo-100 shadow-2xs">
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-extrabold text-slate-900 flex items-center space-x-1.5">
+                <span class="text-base">💰</span>
+                <span>1. Berapa Perkiraan Budget / Anggaran Anda?</span>
+              </label>
+              <span class="text-xs font-black text-indigo-700 font-mono bg-indigo-100/70 px-2 py-0.5 rounded"
+                    x-text="'Rp ' + Number(userChatInput.budgetAmount).toLocaleString('id-ID')"></span>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5">Pilih profil kebutuhan umum pelanggan atau sesuaikan peringkat 10 kriteria secara spesifik di bawah.</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <button @click="applyCustomerPreset('mahasiswa')" 
-                    class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1"
-                    :class="activePreset === 'mahasiswa' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'">
-              <span>🎓 Mahasiswa (Hemat)</span>
-            </button>
-            <button @click="applyCustomerPreset('gaming')" 
-                    class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1"
-                    :class="activePreset === 'gaming' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'">
-              <span>🎮 Gaming & 3D</span>
-            </button>
-            <button @click="applyCustomerPreset('creator')" 
-                    class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1"
-                    :class="activePreset === 'creator' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'">
-              <span>🎨 Content Creator</span>
-            </button>
-            <button @click="applyCustomerPreset('bisnis')" 
-                    class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1"
-                    :class="activePreset === 'bisnis' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'">
-              <span>💼 Bisnis & Mobile</span>
-            </button>
-            <button @click="applyCustomerPreset('upgrade')" 
-                    class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1"
-                    :class="activePreset === 'upgrade' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'">
-              <span>🔧 Upgradable / Awet</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- FORMULA & PANDUAN PELANGGAN ROC -->
-      <div class="mb-5 p-4 rounded-2xl bg-indigo-950 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm border border-indigo-900">
-        <div class="flex items-center space-x-3">
-          <div class="w-9 h-9 rounded-xl bg-indigo-800 flex items-center justify-center text-lg shrink-0">📐</div>
-          <div>
-            <div class="flex items-center space-x-2">
-              <span class="text-xs font-black uppercase tracking-wider text-indigo-300">Rumus Pembobotan Rank Order Centroid (ROC, m = 10)</span>
-              <span class="text-[10px] bg-indigo-800 text-indigo-200 px-2 py-0.5 rounded-full font-bold">Subjektif Konsultatif</span>
-            </div>
-            <p class="text-xs text-slate-200 mt-0.5">Bobot $w_i$ langsung dihitung otomatis dari urutan prioritas Anda: <strong class="text-amber-300 font-mono">w_i = (1/10) &sum;_{k=i}^{10} (1/k)</strong></p>
-          </div>
-        </div>
-        <div class="text-[11px] font-mono bg-indigo-900/90 px-3.5 py-2 rounded-xl border border-indigo-700/80 text-indigo-200 whitespace-nowrap self-stretch sm:self-auto text-center sm:text-right">
-          Rank 1: <strong class="text-emerald-400">29.29%</strong> &bull; Rank 2: <strong class="text-emerald-400">19.29%</strong> &bull; Rank 10: <strong class="text-emerald-400">1.00%</strong>
-        </div>
-      </div>
-
-      <!-- GRID 10 KRITERIA CARDS (2 Baris x 5 Kolom Responsif) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <template x-for="item in kriteriaList" :key="item.id">
-          <div class="p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between"
-               :class="item.rank === 1 ? 'bg-indigo-50/40 border-indigo-300 ring-2 ring-indigo-500/10' : 'bg-slate-50/60 border-slate-200 hover:border-slate-300'">
             
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center space-x-1.5">
-                  <span class="text-xs font-extrabold px-2 py-0.5 rounded bg-white text-slate-800 border border-slate-200 font-mono" x-text="item.kode"></span>
-                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        :class="item.tipe === 'Cost' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
-                        x-text="item.tipe"></span>
-                </div>
-                <span class="text-[11px] font-bold font-mono text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md" x-text="(item.bobot * 100).toFixed(2) + '%'"></span>
-              </div>
-              <h3 class="font-bold text-slate-900 text-xs sm:text-sm" x-text="item.nama"></h3>
-              <p class="text-[10.5px] text-slate-500 mt-0.5 line-clamp-2" x-text="item.keterangan"></p>
+            <!-- Input Ketik Angka Budget -->
+            <div class="relative mt-2 mb-2.5">
+              <span class="absolute left-3 top-2.5 text-xs font-bold text-slate-400">Rp</span>
+              <input type="number" x-model.number="userChatInput.budgetAmount" @input="translateUserConsultationToROC()"
+                     placeholder="Ketik nominal misal: 10000000"
+                     class="w-full text-xs font-bold bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
             </div>
 
-            <!-- Priority Dropdown & Progress Bar (Rank 1 - 10) -->
-            <div class="mt-3.5 pt-3 border-t border-slate-200/80">
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="text-[10.5px] font-semibold text-slate-500">Peringkat Prioritas:</label>
-              </div>
-              <select x-model.number="item.rank" @change="onRankChange()" 
-                      class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
-                <option value="1">Rank 1 (Paling Utama)</option>
-                <option value="2">Rank 2</option>
-                <option value="3">Rank 3</option>
-                <option value="4">Rank 4</option>
-                <option value="5">Rank 5</option>
-                <option value="6">Rank 6</option>
-                <option value="7">Rank 7</option>
-                <option value="8">Rank 8</option>
-                <option value="9">Rank 9</option>
-                <option value="10">Rank 10 (Terendah)</option>
-              </select>
-              
-              <!-- Mini Weight Visual Bar -->
-              <div class="w-full bg-slate-200 rounded-full h-1.5 mt-2 overflow-hidden">
-                <div class="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" :style="'width: ' + (item.bobot * 100 * 3.3) + '%'"></div>
-              </div>
+            <!-- Quick Budget Chips -->
+            <div class="flex flex-wrap gap-1.5">
+              <button @click="setChatBudget(6000000)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition"
+                      :class="userChatInput.budgetAmount === 6000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 6 Jt (Entry)</button>
+              <button @click="setChatBudget(10000000)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition"
+                      :class="userChatInput.budgetAmount === 10000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">10 Jt (Mahasiswa)</button>
+              <button @click="setChatBudget(15000000)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition"
+                      :class="userChatInput.budgetAmount === 15000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">15 Jt (Mid-Range)</button>
+              <button @click="setChatBudget(22000000)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition"
+                      :class="userChatInput.budgetAmount === 22000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">22 Jt (High-End)</button>
+              <button @click="setChatBudget(30000000)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition"
+                      :class="userChatInput.budgetAmount === 30000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">30 Jt+ (Flagship)</button>
+            </div>
+            
+            <p class="text-[10.5px] text-slate-500 mt-2">
+              💡 <em>Budget $\le$ 10 Juta otomatis menempatkan kriteria <strong>Harga (C1) di Rank 1 (Prioritas Tertinggi • 29.29%)</strong>.</em>
+            </p>
+          </div>
+
+          <!-- PERTANYAAN 2: TUJUAN PENGGUNAAN LAPTOP -->
+          <div class="p-4.5 rounded-2xl bg-gradient-to-br from-indigo-50/70 via-white to-slate-50 border border-indigo-100 shadow-2xs">
+            <label class="text-xs font-extrabold text-slate-900 block mb-2.5 flex items-center space-x-1.5">
+              <span class="text-base">🎯</span>
+              <span>2. Laptop Ini Utamanya Digunakan Untuk Apa?</span>
+            </label>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <!-- Opsi Mahasiswa -->
+              <button @click="setChatTujuan('mahasiswa')" 
+                      class="p-2.5 rounded-xl border text-left transition flex items-start space-x-2"
+                      :class="userChatInput.tujuanPenggunaan === 'mahasiswa' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'">
+                <span class="text-base">🎓</span>
+                <div>
+                  <div class="text-xs font-bold">Kuliah & Sekolah</div>
+                  <div class="text-[10px]" :class="userChatInput.tujuanPenggunaan === 'mahasiswa' ? 'text-indigo-100' : 'text-slate-500'">Harga hemat & baterai awet</div>
+                </div>
+              </button>
+
+              <!-- Opsi Gaming -->
+              <button @click="setChatTujuan('gaming')" 
+                      class="p-2.5 rounded-xl border text-left transition flex items-start space-x-2"
+                      :class="userChatInput.tujuanPenggunaan === 'gaming' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'">
+                <span class="text-base">🎮</span>
+                <div>
+                  <div class="text-xs font-bold">Gaming & 3D</div>
+                  <div class="text-[10px]" :class="userChatInput.tujuanPenggunaan === 'gaming' ? 'text-indigo-100' : 'text-slate-500'">GPU Diskrit & CPU kencang</div>
+                </div>
+              </button>
+
+              <!-- Opsi Content Creator -->
+              <button @click="setChatTujuan('creator')" 
+                      class="p-2.5 rounded-xl border text-left transition flex items-start space-x-2"
+                      :class="userChatInput.tujuanPenggunaan === 'creator' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'">
+                <span class="text-base">🎨</span>
+                <div>
+                  <div class="text-xs font-bold">Creator & Desain</div>
+                  <div class="text-[10px]" :class="userChatInput.tujuanPenggunaan === 'creator' ? 'text-indigo-100' : 'text-slate-500'">Layar akurat OLED & CPU</div>
+                </div>
+              </button>
+
+              <!-- Opsi Bisnis -->
+              <button @click="setChatTujuan('bisnis')" 
+                      class="p-2.5 rounded-xl border text-left transition flex items-start space-x-2"
+                      :class="userChatInput.tujuanPenggunaan === 'bisnis' ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'">
+                <span class="text-base">💼</span>
+                <div>
+                  <div class="text-xs font-bold">Bisnis & Mobilitas</div>
+                  <div class="text-[10px]" :class="userChatInput.tujuanPenggunaan === 'bisnis' ? 'text-indigo-100' : 'text-slate-500'">Ringan & garansi resmi ADP</div>
+                </div>
+              </button>
             </div>
           </div>
-        </template>
+
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- PERTANYAAN 3: PRIORITAS UTAMA -->
+          <div>
+            <label class="text-xs font-bold text-slate-800 block mb-1.5">⭐ 3. Faktor Paling Diutamakan:</label>
+            <select x-model="userChatInput.prioritasUtama" @change="translateUserConsultationToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
+              <option value="harga">💰 Harga Paling Murah / Hemat Budget</option>
+              <option value="gaming">🎮 Performa Gaming & Kartu Grafis (GPU)</option>
+              <option value="performa">🚀 Kecepatan Prosesor CPU & Multitasking</option>
+              <option value="creator">✨ Kualitas Layar Jernih & Akurat</option>
+              <option value="baterai">🔋 Baterai Tahan Lama Seharian</option>
+              <option value="upgrade">🔧 Kemudahan Upgrade RAM/SSD di Masa Depan</option>
+            </select>
+          </div>
+
+          <!-- PERTANYAAN 4: TINGKAT MOBILITAS -->
+          <div>
+            <label class="text-xs font-bold text-slate-800 block mb-1.5">🧳 4. Frekuensi Dibawa Bepergian:</label>
+            <select x-model="userChatInput.mobilitas" @change="translateUserConsultationToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
+              <option value="sering">Sering Bepergian (Utamakan Ringan & Baterai)</option>
+              <option value="jarang">Jarang Bepergian (Utamakan Performa & Layar Lebar)</option>
+            </select>
+          </div>
+
+          <!-- PERTANYAAN 5: RENCANA UPGRADE -->
+          <div>
+            <label class="text-xs font-bold text-slate-800 block mb-1.5">🔧 5. Rencana Upgrade di Masa Depan:</label>
+            <select x-model="userChatInput.kebutuhanUpgrade" @change="translateUserConsultationToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
+              <option value="sedang">Standar (RAM On-Board + 1 Slot SSD Oke)</option>
+              <option value="sangat">Sangat Butuh (Wajib Dual Slot RAM & Dual SSD)</option>
+              <option value="tidak">Tidak Butuh (Full On-Board Tidak Masalah)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- HASIL TERJEMAHAN BAHASA SEHARI-HARI KE MATRIKS BOBOT ROC -->
+        <div class="p-4 rounded-2xl bg-indigo-950 text-white border border-indigo-900 shadow-sm">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-xl">📐</span>
+              <div>
+                <span class="text-xs font-black uppercase tracking-wider text-indigo-300 block">Hasil Terjemahan Otomatis ke Bobot ROC (Rank Order Centroid)</span>
+                <p class="text-xs text-slate-200 mt-0.5" x-text="terjemahanPenjelasan"></p>
+              </div>
+            </div>
+            <button @click="consultationMode = 'manual'" class="text-[11px] font-bold text-indigo-300 hover:text-white bg-indigo-900 hover:bg-indigo-800 px-3 py-1.5 rounded-lg border border-indigo-700 transition whitespace-nowrap self-start lg:self-auto">
+              Lihat 10 Matriks Rank &rarr;
+            </button>
+          </div>
+
+          <!-- 10 Kriteria Rank Badges Horizontal -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1.5 pt-2 border-t border-indigo-800/80">
+            <template x-for="item in [...kriteriaList].sort((a,b) => a.rank - b.rank)" :key="item.id">
+              <div class="p-2 rounded-xl text-center flex flex-col justify-between"
+                   :class="item.rank === 1 ? 'bg-emerald-500/20 border border-emerald-400/50' : (item.rank <= 3 ? 'bg-indigo-800/80 border border-indigo-700' : 'bg-indigo-900/50 border border-indigo-800/60')">
+                <span class="text-[10px] font-mono font-black"
+                      :class="item.rank === 1 ? 'text-emerald-300' : (item.rank <= 3 ? 'text-indigo-200' : 'text-slate-400')"
+                      x-text="'Rank #' + item.rank"></span>
+                <span class="text-xs font-bold text-white truncate my-0.5" x-text="item.kode + ' ' + item.nama"></span>
+                <span class="text-[10.5px] font-mono font-extrabold"
+                      :class="item.rank === 1 ? 'text-emerald-400' : 'text-indigo-300'"
+                      x-text="(item.bobot * 100).toFixed(2) + '%'"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
       </div>
+
+      <!-- MODE 2: ATUR MANUAL 10 KRITERIA (ADVANCED / MANUAL ADJUSTMENT) -->
+      <div x-show="consultationMode === 'manual'" x-transition class="space-y-6">
+        <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center justify-between gap-2">
+          <span>⚙️ <strong>Mode Pengaturan Manual Aktif:</strong> Anda dapat menggeser urutan peringkat 1 s/d 10 untuk masing-masing kriteria secara spesifik.</span>
+          <button @click="consultationMode = 'interactive'" class="font-bold underline text-amber-900 whitespace-nowrap">Kembali ke Kuesioner</button>
+        </div>
+
+        <!-- GRID 10 KRITERIA CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+          <template x-for="item in kriteriaList" :key="item.id">
+            <div class="p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between"
+                 :class="item.rank === 1 ? 'bg-indigo-50/40 border-indigo-300 ring-2 ring-indigo-500/10' : 'bg-slate-50/60 border-slate-200 hover:border-slate-300'">
+              
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-xs font-extrabold px-2 py-0.5 rounded bg-white text-slate-800 border border-slate-200 font-mono" x-text="item.kode"></span>
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                          :class="item.tipe === 'Cost' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
+                          x-text="item.tipe"></span>
+                  </div>
+                  <span class="text-[11px] font-bold font-mono text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md" x-text="(item.bobot * 100).toFixed(2) + '%'"></span>
+                </div>
+                <h3 class="font-bold text-slate-900 text-xs sm:text-sm" x-text="item.nama"></h3>
+                <p class="text-[10.5px] text-slate-500 mt-0.5 line-clamp-2" x-text="item.keterangan"></p>
+              </div>
+
+              <!-- Priority Dropdown & Progress Bar (Rank 1 - 10) -->
+              <div class="mt-3.5 pt-3 border-t border-slate-200/80">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-[10.5px] font-semibold text-slate-500">Peringkat Prioritas:</label>
+                </div>
+                <select x-model.number="item.rank" @change="onRankChange()" 
+                        class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
+                  <option value="1">Rank 1 (Paling Utama • 29.29%)</option>
+                  <option value="2">Rank 2 (19.29%)</option>
+                  <option value="3">Rank 3 (14.29%)</option>
+                  <option value="4">Rank 4 (10.95%)</option>
+                  <option value="5">Rank 5 (8.45%)</option>
+                  <option value="6">Rank 6 (6.45%)</option>
+                  <option value="7">Rank 7 (4.79%)</option>
+                  <option value="8">Rank 8 (3.36%)</option>
+                  <option value="9">Rank 9 (2.11%)</option>
+                  <option value="10">Rank 10 (Terendah • 1.00%)</option>
+                </select>
+                
+                <!-- Mini Weight Visual Bar -->
+                <div class="w-full bg-slate-200 rounded-full h-1.5 mt-2 overflow-hidden">
+                  <div class="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" :style="'width: ' + (item.bobot * 100 * 3.3) + '%'"></div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
     </section>
 
     <!-- 2. FILTER KRITERIA PENCARIAN & BUDGET PELANGGAN -->

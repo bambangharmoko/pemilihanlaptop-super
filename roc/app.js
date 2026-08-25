@@ -1533,33 +1533,19 @@ function spkApp() {
       this.isInjectingDemo = false;
     },
 
-    // 8. KOMPUTASI ALGORITMA TOPSIS 10 DIMENSI (C1 - C10)
     kalkulasiTOPSIS(scroll = true) {
       // 1. Pastikan bobot ROC dihitung dari rank 10 kriteria saat ini
       this.hitungBobotROC();
 
       let dataset = [...this.laptopsData];
 
-      // A. Filter Status Ketersediaan
+      // Filter Status Ketersediaan
       if (this.filterStatus !== 'all') {
         dataset = dataset.filter(l => l.status === this.filterStatus);
       }
 
-      // B. Filter Budget Maksimal Customer (Jika diisi)
-      if (this.budgetMaxFilter && Number(this.budgetMaxFilter) > 0) {
-        dataset = dataset.filter(l => Number(l.harga) <= Number(this.budgetMaxFilter));
-      }
-
-      // C. Filter Kategori Penggunaan Customer (Jika dipilih)
-      if (this.kategoriFilter && this.kategoriFilter !== 'all') {
-        dataset = dataset.filter(l => {
-          const kat = (l.kategori_penggunaan || '').toLowerCase();
-          return kat.includes(this.kategoriFilter.toLowerCase());
-        });
-      }
-
       if (dataset.length === 0) {
-        this.showToast("Tidak ada laptop yang sesuai dengan filter budget & kriteria ketersediaan ini.", "error");
+        this.showToast("Tidak ada data laptop di inventaris toko yang dapat dievaluasi.", "error");
         this.hasilRanking = [];
         this.matriksData = null;
         this.hasCalculated = false;

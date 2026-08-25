@@ -153,18 +153,18 @@
     </div>
   </header>
 
-  <!-- PRINT ONLY HEADER (LEMBAR KONSULTASI RESMI TOKO SUPER KOMPUTER) -->
+  <!-- PRINT ONLY HEADER (LEMBAR HASIL KEPUTUSAN RESMI SPK LOPCOW & TOPSIS) -->
   <div class="hidden print-only p-6 border-b-2 border-slate-900 mb-4">
     <div class="flex justify-between items-start">
       <div>
         <h1 class="text-2xl font-black text-slate-900 tracking-tight">TOKO SUPER KOMPUTER</h1>
-        <h2 class="text-sm font-bold text-rose-700 mt-0.5">LEMBAR HASIL KEPUTUSAN PEMILIHAN LAPTOP (METODE LOPCOW & TOPSIS)</h2>
-        <p class="text-xs text-slate-600">Sistem Pendukung Keputusan (SPK) Berbasis Pembobotan Objektif Logaritmik LOPCOW 10 Kriteria</p>
+        <h2 class="text-sm font-bold text-rose-700 mt-0.5">LEMBAR HASIL SPK REKOMENDASI PEMILIHAN LAPTOP</h2>
+        <p class="text-xs text-slate-600">Sistem Pendukung Keputusan (SPK) Kombinasi Metode LOPCOW & TOPSIS (10 Kriteria)</p>
       </div>
       <div class="text-right text-xs text-slate-700 space-y-0.5">
         <p><strong>Tanggal:</strong> <span x-text="new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })"></span></p>
         <p><strong>Waktu:</strong> <span x-text="lastCalculatedAt || new Date().toLocaleTimeString('id-ID')"></span></p>
-        <p><strong>Pelanggan:</strong> <span class="font-bold text-rose-900" x-text="customerNama || 'Customer Toko Super Komputer'"></span></p>
+        <p><strong>Metode:</strong> <span class="font-bold text-rose-900">LOPCOW + TOPSIS 10D</span></p>
       </div>
     </div>
   </div>
@@ -200,33 +200,6 @@
           <span class="text-xs font-bold text-rose-700 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200">
             Total Bobot: 100.00%
           </span>
-        </div>
-      </div>
-
-      <!-- FILTER KONSULTASI / BUDGET & KATEGORI -->
-      <div class="mb-6 p-4.5 rounded-2xl bg-gradient-to-r from-rose-50/80 via-amber-50/40 to-slate-50 border border-rose-100 shadow-2xs">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div>
-            <label class="font-bold text-slate-700 block mb-1">Nama Pelanggan / Catatan:</label>
-            <input type="text" x-model="customerNama" placeholder="Contoh: Customer Super Komputer" 
-                   class="w-full border border-slate-300 rounded-xl p-2.5 bg-white focus:ring-2 focus:ring-rose-500 transition shadow-2xs">
-          </div>
-          <div>
-            <label class="font-bold text-slate-700 block mb-1">Batas Budget Maksimal (Opsional):</label>
-            <input type="number" step="500000" x-model.number="budgetMaxFilter" placeholder="Contoh: 15000000" 
-                   class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-mono focus:ring-2 focus:ring-rose-500 transition shadow-2xs">
-          </div>
-          <div>
-            <label class="font-bold text-slate-700 block mb-1">Filter Kategori Penggunaan:</label>
-            <select x-model="kategoriFilter" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-rose-500 transition shadow-2xs">
-              <option value="all">Semua Kategori Laptop</option>
-              <option value="Gaming">Gaming & 3D Performance</option>
-              <option value="Ultrabook">Ultrabook / Tipis Ringan</option>
-              <option value="Creator">Content Creator & Desain</option>
-              <option value="Mahasiswa">Mahasiswa & Produktivitas</option>
-              <option value="Bisnis">Bisnis & Eksekutif</option>
-            </select>
-          </div>
         </div>
       </div>
 

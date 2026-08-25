@@ -438,7 +438,6 @@ function spkEntropyApp() {
       });
     },
 
-    // 2. ALGORITMA TOPSIS 10 DIMENSI
     kalkulasiTOPSIS(isUserClick = false) {
       if (!this.laptopsData || this.laptopsData.length === 0) {
         this.hasilRanking = [];
@@ -449,22 +448,11 @@ function spkEntropyApp() {
       if (this.filterStatus !== 'all') {
         dataToProcess = dataToProcess.filter(item => item.status === this.filterStatus);
       }
-      if (this.budgetMaxFilter && Number(this.budgetMaxFilter) > 0) {
-        const maxBudget = Number(this.budgetMaxFilter);
-        dataToProcess = dataToProcess.filter(item => Number(item.harga) <= maxBudget);
-      }
-      if (this.kategoriFilter && this.kategoriFilter !== 'all') {
-        const kat = this.kategoriFilter.toLowerCase();
-        dataToProcess = dataToProcess.filter(item => {
-          const itemKat = (item.kategori_penggunaan || '').toLowerCase();
-          return itemKat.includes(kat);
-        });
-      }
 
       if (dataToProcess.length === 0) {
         this.hasilRanking = [];
         if (isUserClick) {
-          this.showToast("Tidak ada laptop yang memenuhi kriteria filter budget / kategori!", "warning");
+          this.showToast("Tidak ada data laptop yang tersedia untuk dievaluasi!", "warning");
         }
         return;
       }

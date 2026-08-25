@@ -1338,6 +1338,14 @@ function spkApp() {
       return this.hasilRanking.slice(0, num);
     },
 
+    // Callback saat limit rekomendasi dirubah oleh user
+    setLimitRekomendasi(val) {
+      this.limitRekomendasi = String(val);
+      if (this.hasCalculated) {
+        this.kalkulasiTOPSIS(false);
+      }
+    },
+
     // Callback saat filter dirubah oleh user (HANYA kalkulasi ulang jika sudah pernah menekan tombol kalkulasi)
     onFilterChange() {
       if (this.hasCalculated) {

@@ -939,16 +939,18 @@ function getInitialKriteriaList() {
   ];
 
   try {
-    const savedRanks = localStorage.getItem('spk_criteria_ranks_10');
-    if (savedRanks) {
-      const parsed = JSON.parse(savedRanks);
-      if (Array.isArray(parsed)) {
-        parsed.forEach(saved => {
-          const target = masterKriteria.find(k => k.id === saved.id || k.kode === saved.kode);
-          if (target && typeof saved.rank === 'number' && saved.rank >= 1 && saved.rank <= 10) {
-            target.rank = Number(saved.rank);
-          }
-        });
+    if (typeof localStorage !== 'undefined') {
+      const savedRanks = localStorage.getItem('spk_criteria_ranks_10');
+      if (savedRanks) {
+        const parsed = JSON.parse(savedRanks);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(saved => {
+            const target = masterKriteria.find(k => k.id === saved.id || k.kode === saved.kode);
+            if (target && typeof saved.rank === 'number' && saved.rank >= 1 && saved.rank <= 10) {
+              target.rank = Number(saved.rank);
+            }
+          });
+        }
       }
     }
   } catch(e) {
@@ -961,9 +963,11 @@ function getInitialKriteriaList() {
 // Helper untuk inisialisasi filter ketersediaan tersimpan
 function getInitialFilter() {
   try {
-    const saved = localStorage.getItem('spk_filter_status');
-    if (saved && ['all', 'ready', 'indent'].includes(saved)) {
-      return saved;
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('spk_filter_status');
+      if (saved && ['all', 'ready', 'indent'].includes(saved)) {
+        return saved;
+      }
     }
   } catch(e) {}
   return 'all';
@@ -985,8 +989,7 @@ function spkApp() {
     
     // Formulir Konsultasi Kebutuhan Laptop (Pilihan Teknis Granular & 100% Fleksibel Bahasa Sehari-hari)
     konsultasiForm: {
-      budgetAmount: 10000000,    // 💰 Batas Budget Pelanggan (Satu-satunya Input Budget)
-      preferensiHarga: 'hemat',  // 'hemat', 'wajar', 'bebas'
+      budgetAmount: 10000000,    // 💰 Batas Maksimal Budget Pelanggan (Satu-satunya Input Budget)
       kebutuhanCPU: 'all',       // 'all', 'entry', 'mid', 'high'
       kebutuhanRAM: 'all',       // 'all', '4', '8', '16', '32', '64'
       kebutuhanSSD: 'all',       // 'all', '128', '256', '512', '1024', '2048'
@@ -998,11 +1001,12 @@ function spkApp() {
       kebutuhanUpgrade: 'all'    // 'all', 'onboard', 'ada_slot', 'dual_slot'
     },
 
-    // Filter Tambahan (Opsional)
+    // Filter Tambahan (Opsional) & Pilihan Jumlah Rekomendasi
     brandFilter: 'all',
     kategoriFilter: 'all',
     searchQuery: '',
     budgetMaxFilter: 10000000,
+    limitRekomendasi: '5', // '3', '5', '7', '10', 'all'
 
     // Teks Penjelasan Translasi Bahasa Sehari-hari ke Bobot ROC
     penjelasanTranslasiROC: '',
@@ -1075,7 +1079,7 @@ function spkApp() {
     setFilter(status) {
       this.filterStatus = status;
       this.saveSettings();
-      this.kalkulasiTOPSIS(false);
+      this.onFilterChange();
     },
 
     saveSettings() {
@@ -1195,7 +1199,14 @@ function spkApp() {
       return tags.slice(0, 3);
     },
 
-    // Helper Filter Pelanggan
+    // Helper Format Rupiah Live Preview
+    getFormattedBudgetPreview() {
+      const b = Number(this.konsultasiForm.budgetAmount);
+      if (!b || b <= 0) return 'Semua Budget (Tanpa Batas)';
+      return 'Rp ' + Number(b).toLocaleString('id-ID');
+    },
+
+    // Helper Filter Pelanggan & Kandidat
     getAvailableBrands() {
       if (!this.laptopsData || this.laptopsData.length === 0) return [];
       const set = new Set(this.laptopsData.map(l => l.merek).filter(Boolean));
@@ -1206,21 +1217,84 @@ function spkApp() {
       const set = new Set(this.laptopsData.map(l => l.kategori_penggunaan).filter(Boolean));
       return Array.from(set).sort();
     },
+
+    // Single Source of Truth untuk Dataset Kandidat Laptop Berdasarkan Filter
+    getFilteredCandidates() {
+      let dataset = [...this.laptopsData];
+
+      // Filter Status Ketersediaan
+      if (this.filterStatus !== 'all') {
+        dataset = dataset.filter(l => l.status === this.filterStatus);
+      }
+
+      // Filter Merk / Brand Laptop
+      if (this.brandFilter && this.brandFilter !== 'all') {
+        dataset = dataset.filter(l => l.merek && l.merek.toLowerCase() === this.brandFilter.toLowerCase());
+      }
+
+      // Filter Kategori Penggunaan
+      if (this.kategoriFilter && this.kategoriFilter !== 'all') {
+        dataset = dataset.filter(l => l.kategori_penggunaan && l.kategori_penggunaan.toLowerCase() === this.kategoriFilter.toLowerCase());
+      }
+
+      // Filter Batas Maksimal Budget
+      if (this.budgetMaxFilter && Number(this.budgetMaxFilter) > 0) {
+        dataset = dataset.filter(l => Number(l.harga) <= Number(this.budgetMaxFilter));
+      }
+
+      // Filter Pencarian Nama / Seri / Spek
+      if (this.searchQuery && this.searchQuery.trim() !== '') {
+        const q = this.searchQuery.toLowerCase().trim();
+        dataset = dataset.filter(l => 
+          (l.nama && l.nama.toLowerCase().includes(q)) || 
+          (l.merek && l.merek.toLowerCase().includes(q)) ||
+          (l.spesifikasi_ringkas && l.spesifikasi_ringkas.toLowerCase().includes(q))
+        );
+      }
+
+      return dataset;
+    },
+
+    // Helper Pengambilan Hasil Ranking Berdasarkan Limit (Top 3 - 10 atau Semua)
+    getDisplayedHasilRanking() {
+      if (!this.hasilRanking || this.hasilRanking.length === 0) return [];
+      if (this.limitRekomendasi === 'all') return this.hasilRanking;
+      const num = parseInt(this.limitRekomendasi, 10) || 5;
+      return this.hasilRanking.slice(0, num);
+    },
+
+    // Callback saat filter dirubah oleh user (HANYA kalkulasi ulang jika sudah pernah menekan tombol kalkulasi)
+    onFilterChange() {
+      if (this.hasCalculated) {
+        this.kalkulasiTOPSIS(false);
+      }
+    },
+
+    onBudgetChange() {
+      this.translateKonsultasiToROC();
+      this.onFilterChange();
+    },
+
     setQuickBudget(val) {
       this.budgetMaxFilter = val;
-      this.kalkulasiTOPSIS(false);
+      this.konsultasiForm.budgetAmount = val;
+      this.translateKonsultasiToROC();
+      this.onFilterChange();
     },
     setStatusFilter(s) {
       this.filterStatus = s;
-      this.kalkulasiTOPSIS(false);
+      this.onFilterChange();
     },
     resetAllFilters() {
       this.budgetMaxFilter = null;
+      this.konsultasiForm.budgetAmount = null;
       this.brandFilter = 'all';
       this.kategoriFilter = 'all';
       this.filterStatus = 'all';
       this.searchQuery = '';
-      this.kalkulasiTOPSIS(false);
+      this.limitRekomendasi = '5';
+      this.translateKonsultasiToROC();
+      this.onFilterChange();
       this.showToast("Semua filter pencarian telah direset.", "info");
     },
 
@@ -1279,21 +1353,18 @@ function spkApp() {
         C10: 50  // Upgradeability
       };
 
-      // 1. Pengaruh Input Nominal Budget & Preferensi Harga (Kriteria C1 - Harga, Cost)
+      // 1. Pengaruh Input Nominal Batas Maksimal Budget (Kriteria C1 - Harga, Cost)
       if (budget > 0 && budget <= 8000000) {
-        scores.C1 += 75; // Budget sangat ketat <= 8 Jt: Harga mutlak #1
+        scores.C1 += 80; // Budget sangat hemat <= 8 Jt: Harga mutlak #1
       } else if (budget > 8000000 && budget <= 12000000) {
-        scores.C1 += 50; // Budget menengah ke bawah 8-12 Jt: Harga sangat penting
+        scores.C1 += 55; // Budget menengah ke bawah 8-12 Jt: Harga sangat penting
       } else if (budget > 12000000 && budget <= 18000000) {
-        scores.C1 += 25; // Budget mid-range 12-18 Jt
+        scores.C1 += 30; // Budget mid-range 12-18 Jt
       } else if (budget > 18000000 && budget <= 28000000) {
-        scores.C1 += 5;  // Budget tinggi
+        scores.C1 += 10; // Budget tinggi
       } else if (budget > 28000000) {
         scores.C1 -= 25; // Budget sultan: Harga bukan kendala, performa utama
       }
-
-      if (form.preferensiHarga === 'hemat') scores.C1 += 40;
-      else if (form.preferensiHarga === 'bebas') scores.C1 -= 30;
 
       // 2. Kebutuhan Kecepatan Prosesor CPU (C2 - Benefit)
       if (form.kebutuhanCPU === 'high') scores.C2 += 65;      // i7/i9/R7/R9/M-Series
@@ -1378,17 +1449,18 @@ function spkApp() {
     setBudget(amount) {
       this.konsultasiForm.budgetAmount = amount;
       this.translateKonsultasiToROC();
+      this.onFilterChange();
     },
 
     setKonsultasi(field, val) {
       this.konsultasiForm[field] = val;
       this.translateKonsultasiToROC();
+      this.onFilterChange();
     },
 
     resetKonsultasi() {
       this.konsultasiForm = {
         budgetAmount: 10000000,
-        preferensiHarga: 'hemat',
         kebutuhanCPU: 'all',
         kebutuhanRAM: 'all',
         kebutuhanSSD: 'all',
@@ -1403,6 +1475,10 @@ function spkApp() {
       this.kategoriFilter = 'all';
       this.searchQuery = '';
       this.filterStatus = 'all';
+      this.limitRekomendasi = '5';
+      this.hasCalculated = false;
+      this.hasilRanking = [];
+      this.matriksData = null;
       this.translateKonsultasiToROC();
       this.showToast("Formulir kebutuhan telah direset ke setelan awal.", "info");
     },
@@ -1667,37 +1743,7 @@ function spkApp() {
       // 1. Pastikan bobot ROC dihitung dari rank 10 kriteria saat ini
       this.hitungBobotROC();
 
-      let dataset = [...this.laptopsData];
-
-      // Filter Status Ketersediaan
-      if (this.filterStatus !== 'all') {
-        dataset = dataset.filter(l => l.status === this.filterStatus);
-      }
-
-      // Filter Merk / Brand Laptop
-      if (this.brandFilter && this.brandFilter !== 'all') {
-        dataset = dataset.filter(l => l.merek && l.merek.toLowerCase() === this.brandFilter.toLowerCase());
-      }
-
-      // Filter Kategori Penggunaan
-      if (this.kategoriFilter && this.kategoriFilter !== 'all') {
-        dataset = dataset.filter(l => l.kategori_penggunaan && l.kategori_penggunaan.toLowerCase() === this.kategoriFilter.toLowerCase());
-      }
-
-      // Filter Batas Maksimal Budget
-      if (this.budgetMaxFilter && Number(this.budgetMaxFilter) > 0) {
-        dataset = dataset.filter(l => Number(l.harga) <= Number(this.budgetMaxFilter));
-      }
-
-      // Filter Pencarian Nama / Seri / Spek
-      if (this.searchQuery && this.searchQuery.trim() !== '') {
-        const q = this.searchQuery.toLowerCase().trim();
-        dataset = dataset.filter(l => 
-          (l.nama && l.nama.toLowerCase().includes(q)) || 
-          (l.merek && l.merek.toLowerCase().includes(q)) ||
-          (l.spesifikasi_ringkas && l.spesifikasi_ringkas.toLowerCase().includes(q))
-        );
-      }
+      const dataset = this.getFilteredCandidates();
 
       if (dataset.length === 0) {
         this.showToast("Tidak ada laptop yang sesuai dengan kombinasi filter Anda. Coba sesuaikan budget atau pilih Semua Merk.", "warning");
@@ -1860,11 +1906,12 @@ function spkApp() {
 
     // 10. EKSPOR KE CSV (Lengkap 10 Kriteria)
     exportCSV() {
-      if (this.hasilRanking.length === 0) return;
+      const list = this.getDisplayedHasilRanking();
+      if (list.length === 0) return;
       
       let csv = "Rank,Nama Laptop,Merek,Status,Kategori,Harga (Rp),CPU Score,RAM (GB),SSD (GB),GPU Score,Baterai (Wh),Berat (Kg),Layar Score,Garansi Score (1-5),Upgrade Score (1-5),D Plus,D Minus,Skor Vi\n";
       
-      this.hasilRanking.forEach((item, index) => {
+      list.forEach((item, index) => {
         csv += `${index + 1},"${item.nama.replace(/"/g, '""')}","${item.merek}","${item.status}","${item.kategori_penggunaan || 'Umum'}",${item.harga},${item.cpu_score},${item.ram_gb},${item.ssd_gb},${item.gpu_score},${item.baterai_wh},${item.berat_kg},${item.layar_score},${item.garansi_score || 3},${item.upgrade_score || 3},${item.dPlus.toFixed(4)},${item.dMinus.toFixed(4)},${item.skorVi.toFixed(4)}\n`;
       });
 
@@ -1872,11 +1919,11 @@ function spkApp() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `Hasil_Rekomendasi_Laptop_SPK_10Kriteria_${new Date().toISOString().slice(0,10)}.csv`);
+      link.setAttribute("download", `Hasil_Rekomendasi_Laptop_SPK_Top${list.length}_${new Date().toISOString().slice(0,10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      this.showToast("Data hasil rekomendasi (10 Kriteria) berhasil diekspor ke file CSV!");
+      this.showToast(`Data hasil rekomendasi (${list.length} laptop) berhasil diekspor ke file CSV!`);
     }
   };
 }

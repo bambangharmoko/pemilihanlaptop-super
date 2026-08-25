@@ -986,7 +986,9 @@ function spkApp() {
     // Fitur Konsultasi Khusus Customer Toko Super Komputer
     customerNama: '',
     budgetMaxFilter: null,
+    brandFilter: 'all',
     kategoriFilter: 'all',
+    searchQuery: '',
     activePreset: null,
 
     toasts: [],
@@ -1175,6 +1177,35 @@ function spkApp() {
       if (Number(laptop.garansi_score) >= 4) tags.push({ label: 'Garansi + ADP', icon: '🛡️', color: 'bg-rose-50 text-rose-700 border-rose-200' });
       if (Number(laptop.upgrade_score) >= 4) tags.push({ label: 'Mudah Upgrade', icon: '🔧', color: 'bg-teal-50 text-teal-700 border-teal-200' });
       return tags.slice(0, 3);
+    },
+
+    // Helper Filter Pelanggan
+    getAvailableBrands() {
+      if (!this.laptopsData || this.laptopsData.length === 0) return [];
+      const set = new Set(this.laptopsData.map(l => l.merek).filter(Boolean));
+      return Array.from(set).sort();
+    },
+    getAvailableKategoris() {
+      if (!this.laptopsData || this.laptopsData.length === 0) return [];
+      const set = new Set(this.laptopsData.map(l => l.kategori_penggunaan).filter(Boolean));
+      return Array.from(set).sort();
+    },
+    setQuickBudget(val) {
+      this.budgetMaxFilter = val;
+      this.kalkulasiTOPSIS(false);
+    },
+    setStatusFilter(s) {
+      this.filterStatus = s;
+      this.kalkulasiTOPSIS(false);
+    },
+    resetAllFilters() {
+      this.budgetMaxFilter = null;
+      this.brandFilter = 'all';
+      this.kategoriFilter = 'all';
+      this.filterStatus = 'all';
+      this.searchQuery = '';
+      this.kalkulasiTOPSIS(false);
+      this.showToast("Semua filter pencarian telah direset.", "info");
     },
 
     // 1. RUMUS PEMBOBOTAN METODE ROC (Rank Order Centroid - m = 10)
@@ -1559,8 +1590,33 @@ function spkApp() {
         dataset = dataset.filter(l => l.status === this.filterStatus);
       }
 
+      // Filter Merk / Brand Laptop
+      if (this.brandFilter && this.brandFilter !== 'all') {
+        dataset = dataset.filter(l => l.merek && l.merek.toLowerCase() === this.brandFilter.toLowerCase());
+      }
+
+      // Filter Kategori Penggunaan
+      if (this.kategoriFilter && this.kategoriFilter !== 'all') {
+        dataset = dataset.filter(l => l.kategori_penggunaan && l.kategori_penggunaan.toLowerCase() === this.kategoriFilter.toLowerCase());
+      }
+
+      // Filter Batas Maksimal Budget
+      if (this.budgetMaxFilter && Number(this.budgetMaxFilter) > 0) {
+        dataset = dataset.filter(l => Number(l.harga) <= Number(this.budgetMaxFilter));
+      }
+
+      // Filter Pencarian Nama / Seri / Spek
+      if (this.searchQuery && this.searchQuery.trim() !== '') {
+        const q = this.searchQuery.toLowerCase().trim();
+        dataset = dataset.filter(l => 
+          (l.nama && l.nama.toLowerCase().includes(q)) || 
+          (l.merek && l.merek.toLowerCase().includes(q)) ||
+          (l.spesifikasi_ringkas && l.spesifikasi_ringkas.toLowerCase().includes(q))
+        );
+      }
+
       if (dataset.length === 0) {
-        this.showToast("Tidak ada data laptop di inventaris toko yang dapat dievaluasi.", "error");
+        this.showToast("Tidak ada laptop yang sesuai dengan kombinasi filter Anda. Coba sesuaikan budget atau pilih Semua Merk.", "warning");
         this.hasilRanking = [];
         this.matriksData = null;
         this.hasCalculated = false;

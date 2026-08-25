@@ -244,7 +244,9 @@ function spkLopcowApp() {
 
     customerNama: '',
     budgetMaxFilter: null,
+    brandFilter: 'all',
     kategoriFilter: 'all',
+    searchQuery: '',
     lastCalculatedAt: '',
 
     confirmModal: {
@@ -378,6 +380,35 @@ function spkLopcowApp() {
       return tags.slice(0, 3);
     },
 
+    // Helper Filter Pelanggan
+    getAvailableBrands() {
+      if (!this.laptopsData || this.laptopsData.length === 0) return [];
+      const set = new Set(this.laptopsData.map(l => l.merek).filter(Boolean));
+      return Array.from(set).sort();
+    },
+    getAvailableKategoris() {
+      if (!this.laptopsData || this.laptopsData.length === 0) return [];
+      const set = new Set(this.laptopsData.map(l => l.kategori_penggunaan).filter(Boolean));
+      return Array.from(set).sort();
+    },
+    setQuickBudget(val) {
+      this.budgetMaxFilter = val;
+      this.kalkulasiTOPSIS(false);
+    },
+    setStatusFilter(s) {
+      this.filterStatus = s;
+      this.kalkulasiTOPSIS(false);
+    },
+    resetAllFilters() {
+      this.budgetMaxFilter = null;
+      this.brandFilter = 'all';
+      this.kategoriFilter = 'all';
+      this.filterStatus = 'all';
+      this.searchQuery = '';
+      this.kalkulasiTOPSIS(false);
+      this.showToast("Semua filter pencarian telah direset.", "info");
+    },
+
     // 1. RUMUS PEMBOBOTAN METODE LOPCOW (Logarithmic Percentage Change-driven Objective Weighting)
     // Formula:
     // 1) Normalisasi Min-Max r_ij (Benefit: (x-min)/(max-min), Cost: (max-x)/(max-min))
@@ -487,14 +518,41 @@ function spkLopcowApp() {
       }
 
       let dataToProcess = [...this.laptopsData];
+      
+      // Filter Status Ketersediaan
       if (this.filterStatus !== 'all') {
         dataToProcess = dataToProcess.filter(item => item.status === this.filterStatus);
+      }
+
+      // Filter Merk / Brand Laptop
+      if (this.brandFilter && this.brandFilter !== 'all') {
+        dataToProcess = dataToProcess.filter(item => item.merek && item.merek.toLowerCase() === this.brandFilter.toLowerCase());
+      }
+
+      // Filter Kategori Penggunaan
+      if (this.kategoriFilter && this.kategoriFilter !== 'all') {
+        dataToProcess = dataToProcess.filter(item => item.kategori_penggunaan && item.kategori_penggunaan.toLowerCase() === this.kategoriFilter.toLowerCase());
+      }
+
+      // Filter Batas Maksimal Budget
+      if (this.budgetMaxFilter && Number(this.budgetMaxFilter) > 0) {
+        dataToProcess = dataToProcess.filter(item => Number(item.harga) <= Number(this.budgetMaxFilter));
+      }
+
+      // Filter Pencarian Nama / Seri / Spek
+      if (this.searchQuery && this.searchQuery.trim() !== '') {
+        const q = this.searchQuery.toLowerCase().trim();
+        dataToProcess = dataToProcess.filter(item => 
+          (item.nama && item.nama.toLowerCase().includes(q)) || 
+          (item.merek && item.merek.toLowerCase().includes(q)) ||
+          (item.spesifikasi_ringkas && item.spesifikasi_ringkas.toLowerCase().includes(q))
+        );
       }
 
       if (dataToProcess.length === 0) {
         this.hasilRanking = [];
         if (isUserClick) {
-          this.showToast("Tidak ada data laptop yang tersedia untuk dievaluasi!", "warning");
+          this.showToast("Tidak ada laptop yang sesuai dengan kombinasi filter Anda. Coba sesuaikan budget atau pilih Semua Merk.", "warning");
         }
         return;
       }

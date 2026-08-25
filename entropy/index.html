@@ -242,9 +242,16 @@
             <h2 class="text-base sm:text-lg font-bold text-slate-900">Bobot Objektif 10 Kriteria (Dihitung dari Dispersi
               Data)</h2>
           </div>
-          <p class="text-xs text-slate-500 mt-1 pl-8">Bobot $w_j$ dihasilkan secara matematis dari nilai entropi $E_j$
+          <p class="text-xs text-slate-500 mt-1 pl-8">Bobot $w_j$ dihasilkan secara otomatis dari nilai entropi $E_j$
             dan diversifikasi $d_j = 1 - E_j$ seluruh alternatif laptop aktif.</p>
         </div>
+        <div class="flex items-center space-x-2 self-start sm:self-auto pl-8 sm:pl-0">
+          <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+            Total Bobot: 100.00%
+          </span>
+        </div>
+      </div>
+
       <!-- FORMULA & PANDUAN PELANGGAN SHANNON ENTROPY -->
       <div class="mb-5 p-4 rounded-2xl bg-emerald-950 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm border border-emerald-900">
         <div class="flex items-center space-x-3">
@@ -305,44 +312,114 @@
           </div>
         </template>
       </div>
+    </section>
 
-      <!-- FILTER STATUS LAPTOP & CALCULATE BUTTON -->
-      <div class="mt-7 pt-5 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
+    <!-- 2. FILTER KRITERIA PENCARIAN & BUDGET PELANGGAN -->
+    <section class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/90 shadow-sm mb-8 no-print">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-slate-100 mb-4 gap-2">
+        <div class="flex items-center space-x-2">
+          <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">2</span>
+          <h2 class="text-base sm:text-lg font-bold text-slate-900">Filter Kriteria Pencarian & Budget Pelanggan</h2>
+        </div>
+        <button @click="resetAllFilters()" class="text-xs font-semibold text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 px-3 py-1.5 rounded-lg border border-slate-200 transition flex items-center space-x-1 self-start sm:self-auto">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          <span>Reset Filter</span>
+        </button>
+      </div>
 
-        <!-- Filter Tabs -->
-        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <span class="text-xs font-bold text-slate-700 mr-1">Filter Ketersediaan:</span>
-          <div class="inline-flex rounded-xl border border-slate-200 bg-slate-100/80 p-1 text-xs">
-            <button @click="filterStatus = 'all'; kalkulasiTOPSIS(false)"
-              :class="filterStatus === 'all' ? 'bg-white shadow-xs text-slate-900 font-bold' : 'text-slate-600 font-medium hover:text-slate-900'"
-              class="px-3 py-1.5 rounded-lg transition">Semua (<span x-text="laptopsData.length"></span>)</button>
-            <button @click="filterStatus = 'ready'; kalkulasiTOPSIS(false)"
-              :class="filterStatus === 'ready' ? 'bg-white shadow-xs text-emerald-700 font-bold' : 'text-slate-600 font-medium hover:text-emerald-700'"
-              class="px-3 py-1.5 rounded-lg transition">Ready Toko (<span
-                x-text="laptopsData.filter(l => l.status === 'ready').length"></span>)</button>
-            <button @click="filterStatus = 'indent'; kalkulasiTOPSIS(false)"
-              :class="filterStatus === 'indent' ? 'bg-white shadow-xs text-amber-700 font-bold' : 'text-slate-600 font-medium hover:text-amber-700'"
-              class="px-3 py-1.5 rounded-lg transition">Indent (<span
-                x-text="laptopsData.filter(l => l.status === 'indent').length"></span>)</button>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- 1. Maksimal Budget (Rp) -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+            <span>💰 Batas Budget Maksimal:</span>
+            <span x-show="budgetMaxFilter" class="text-[11px] font-extrabold text-emerald-600 font-mono" x-text="'≤ Rp ' + Number(budgetMaxFilter).toLocaleString('id-ID')"></span>
+          </label>
+          <input type="number" x-model.number="budgetMaxFilter" @input="kalkulasiTOPSIS(false)" placeholder="Contoh: 15000000 (Semua Budget)"
+                 class="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs">
+          <!-- Quick Budget Chips -->
+          <div class="flex flex-wrap gap-1 mt-2">
+            <button @click="setQuickBudget(null)" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
+                    :class="!budgetMaxFilter ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200'">Semua</button>
+            <button @click="setQuickBudget(8000000)" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
+                    :class="budgetMaxFilter === 8000000 ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200'">≤ 8 Jt</button>
+            <button @click="setQuickBudget(12000000)" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
+                    :class="budgetMaxFilter === 12000000 ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200'">≤ 12 Jt</button>
+            <button @click="setQuickBudget(16000000)" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
+                    :class="budgetMaxFilter === 16000000 ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200'">≤ 16 Jt</button>
+            <button @click="setQuickBudget(25000000)" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
+                    :class="budgetMaxFilter === 25000000 ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200'">≤ 25 Jt</button>
           </div>
         </div>
 
-        <!-- Action Calculate Button -->
-        <div class="flex items-center space-x-2.5 w-full md:w-auto justify-end">
-          <button @click="kalkulasiTOPSIS(true)" :disabled="laptopsData.length === 0"
-            class="w-full md:w-auto px-7 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-emerald-200 hover:shadow-emerald-300 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2">
-            <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z">
-              </path>
-            </svg>
-            <span>Kalkulasi Rekomendasi (Entropy + TOPSIS)</span>
-          </button>
+        <!-- 2. Pilihan Merk / Brand -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">🏷️ Merk / Brand Laptop:</label>
+          <select x-model="brandFilter" @change="kalkulasiTOPSIS(false)"
+                  class="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs">
+            <option value="all">Semua Merk Laptop</option>
+            <template x-for="brand in getAvailableBrands()" :key="brand">
+              <option :value="brand" x-text="brand"></option>
+            </template>
+          </select>
+          <p class="text-[10.5px] text-slate-400 mt-1.5">Pilih brand spesifik (Asus, Lenovo, Acer, Apple, HP, dll).</p>
         </div>
+
+        <!-- 3. Kategori Penggunaan -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">💻 Kategori Penggunaan:</label>
+          <select x-model="kategoriFilter" @change="kalkulasiTOPSIS(false)"
+                  class="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs">
+            <option value="all">Semua Kategori Laptop</option>
+            <template x-for="cat in getAvailableKategoris()" :key="cat">
+              <option :value="cat" x-text="cat"></option>
+            </template>
+          </select>
+          <p class="text-[10.5px] text-slate-400 mt-1.5">Filter model Gaming, Mahasiswa, Ultrabook, dll.</p>
+        </div>
+
+        <!-- 4. Status Stok & Cari Nama/Model -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">🔍 Cari Model / Seri Laptop:</label>
+          <div class="relative">
+            <input type="text" x-model="searchQuery" @input="kalkulasiTOPSIS(false)" placeholder="Cari misal: TUF, Zenbook, Ideapad..."
+                   class="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl pl-8 pr-3 py-2.5 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition shadow-2xs">
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <div class="flex items-center space-x-2 mt-2">
+            <span class="text-[11px] font-bold text-slate-500">Ketersediaan:</span>
+            <div class="flex space-x-1">
+              <button @click="setStatusFilter('all')" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
+                      :class="filterStatus === 'all' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-600 border-slate-200'">Semua</button>
+              <button @click="setStatusFilter('ready')" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
+                      :class="filterStatus === 'ready' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-600 border-slate-200'">Ready</button>
+              <button @click="setStatusFilter('indent')" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
+                      :class="filterStatus === 'indent' ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-100 text-slate-600 border-slate-200'">Indent</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Filter Summary & Calculate Button -->
+      <div class="mt-4 pt-3.5 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+          <span class="font-bold text-slate-700">Hasil Filter:</span>
+          <span class="px-2.5 py-0.5 rounded-full font-extrabold text-[11px]"
+                :class="hasilRanking.length > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                x-text="hasilRanking.length + ' Laptop Sesuai Kriteria'"></span>
+          <span x-show="budgetMaxFilter" class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-[10.5px]" x-text="'Budget ≤ ' + Number(budgetMaxFilter).toLocaleString('id-ID')"></span>
+          <span x-show="brandFilter !== 'all'" class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-[10.5px]" x-text="'Merk: ' + brandFilter"></span>
+          <span x-show="kategoriFilter !== 'all'" class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-[10.5px]" x-text="'Kategori: ' + kategoriFilter"></span>
+        </div>
+        
+        <button @click="kalkulasiTOPSIS(true)" :disabled="laptopsData.length === 0"
+                class="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-emerald-200 transition flex items-center justify-center space-x-2">
+          <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          <span>Kalkulasi Rekomendasi (Entropy + TOPSIS)</span>
+        </button>
       </div>
     </section>
 
-    <!-- 2. HASIL PERANKINGAN TOPSIS (SHANNON ENTROPY) -->
+    <!-- 3. HASIL PERANKINGAN TOPSIS (SHANNON ENTROPY) -->
     <section id="hasilSection" class="mb-10" x-show="hasilRanking.length > 0" x-transition>
 
       <!-- Section Title & Toolbars -->
@@ -350,7 +427,7 @@
         <div>
           <div class="flex items-center space-x-2">
             <span
-              class="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">2</span>
+              class="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">3</span>
             <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Hasil Rekomendasi Laptop Terbaik
               (Entropy + TOPSIS)</h2>
           </div>

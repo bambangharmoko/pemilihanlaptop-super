@@ -35,10 +35,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Modul Koneksi Supabase Terpisah -->
-  <script src="/supabase.js"></script>
+  <script src="/supabase.js?v=20260825_3"></script>
 
   <!-- Modul Logika Aplikasi & Algoritma SPK 10 Kriteria -->
-  <script src="/roc/app.js"></script>
+  <script src="/roc/app.js?v=20260825_3"></script>
   
   <!-- Alpine.js untuk Reaktivitas UI -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
@@ -49,7 +49,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
   <!-- Stylesheet Eksternal Terpisah -->
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=20260825_3">
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white" x-data="spkApp()" x-init="init()">
 
@@ -599,19 +599,19 @@
             <span class="text-[11px] font-bold text-slate-500 px-1.5 hidden md:inline">Limit:</span>
             <button type="button" @click="setLimitRekomendasi('3')" 
                     class="px-2.5 py-1 text-xs font-bold rounded-lg transition"
-                    :class="limitRekomendasi === '3' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 3</button>
+                    :class="limitRekomendasi == '3' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 3</button>
             <button type="button" @click="setLimitRekomendasi('5')" 
                     class="px-2.5 py-1 text-xs font-bold rounded-lg transition"
-                    :class="limitRekomendasi === '5' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 5</button>
+                    :class="limitRekomendasi == '5' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 5</button>
             <button type="button" @click="setLimitRekomendasi('7')" 
                     class="px-2.5 py-1 text-xs font-bold rounded-lg transition"
-                    :class="limitRekomendasi === '7' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 7</button>
+                    :class="limitRekomendasi == '7' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 7</button>
             <button type="button" @click="setLimitRekomendasi('10')" 
                     class="px-2.5 py-1 text-xs font-bold rounded-lg transition"
-                    :class="limitRekomendasi === '10' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 10</button>
+                    :class="limitRekomendasi == '10' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 10</button>
             <button type="button" @click="setLimitRekomendasi('all')" 
                     class="px-2.5 py-1 text-xs font-bold rounded-lg transition"
-                    :class="limitRekomendasi === 'all' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Semua</button>
+                    :class="limitRekomendasi == 'all' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Semua</button>
           </div>
 
           <!-- Button Detail Perhitungan Matrix -->

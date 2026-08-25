@@ -1162,6 +1162,21 @@ function spkApp() {
       }
     },
 
+    // Helper Smart Badges Keunggulan Laptop Khusus Pelanggan
+    getKeunggulanLaptop(laptop) {
+      if (!laptop) return [];
+      const tags = [];
+      if (Number(laptop.harga) <= 10000000) tags.push({ label: 'Hemat Budget', icon: '💰', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' });
+      if (Number(laptop.cpu_score) >= 90) tags.push({ label: 'CPU Kencang', icon: '🚀', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' });
+      if (Number(laptop.gpu_score) >= 85) tags.push({ label: 'Gaming & 3D Top', icon: '🎮', color: 'bg-purple-50 text-purple-700 border-purple-200' });
+      if (Number(laptop.baterai_wh) >= 70) tags.push({ label: 'Baterai Awet', icon: '🔋', color: 'bg-blue-50 text-blue-700 border-blue-200' });
+      if (Number(laptop.berat_kg) <= 1.45) tags.push({ label: 'Ringan & Portabel', icon: '🪶', color: 'bg-amber-50 text-amber-700 border-amber-200' });
+      if (Number(laptop.layar_score) >= 92) tags.push({ label: 'Layar Akurat/OLED', icon: '✨', color: 'bg-sky-50 text-sky-700 border-sky-200' });
+      if (Number(laptop.garansi_score) >= 4) tags.push({ label: 'Garansi + ADP', icon: '🛡️', color: 'bg-rose-50 text-rose-700 border-rose-200' });
+      if (Number(laptop.upgrade_score) >= 4) tags.push({ label: 'Mudah Upgrade', icon: '🔧', color: 'bg-teal-50 text-teal-700 border-teal-200' });
+      return tags.slice(0, 3);
+    },
+
     // 1. RUMUS PEMBOBOTAN METODE ROC (Rank Order Centroid - m = 10)
     // Formula Akademik: w_i = (1/m) * SUM_{k=i}^m (1/k)
     hitungBobotROC() {

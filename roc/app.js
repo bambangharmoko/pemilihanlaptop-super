@@ -983,19 +983,19 @@ function spkApp() {
     isSaving: false,
     filterStatus: getInitialFilter(),
     
-    // Formulir Konsultasi Kebutuhan Laptop (Bahasa Sehari-hari yang Fleksibel & Bebas Preset Kaku)
+    // Formulir Konsultasi Kebutuhan Laptop (Pilihan Teknis Granular & 100% Fleksibel Bahasa Sehari-hari)
     konsultasiForm: {
       budgetAmount: 10000000,    // 💰 Batas Budget Pelanggan (Satu-satunya Input Budget)
       preferensiHarga: 'hemat',  // 'hemat', 'wajar', 'bebas'
-      kebutuhanCPU: 'standar',   // 'kencang', 'standar', 'biasa'
-      kebutuhanRAM: 'standar',   // 'besar', 'standar', 'biasa'
-      kebutuhanSSD: 'standar',   // 'lega', 'standar'
-      kebutuhanGPU: 'standar',   // 'gaming', 'standar'
-      kebutuhanBaterai: 'awet',  // 'awet', 'standar'
-      kebutuhanBobot: 'ringan',  // 'ringan', 'standar'
-      kebutuhanLayar: 'standar', // 'oled', 'standar'
-      kebutuhanGaransi: 'standar', // 'panjang', 'standar'
-      kebutuhanUpgrade: 'standar'  // 'wajib', 'standar'
+      kebutuhanCPU: 'all',       // 'all', 'entry', 'mid', 'high'
+      kebutuhanRAM: 'all',       // 'all', '4', '8', '16', '32', '64'
+      kebutuhanSSD: 'all',       // 'all', '128', '256', '512', '1024', '2048'
+      kebutuhanGPU: 'all',       // 'all', 'integrated', 'entry_discrete', 'high_discrete'
+      kebutuhanBaterai: 'all',   // 'all', 'standar', 'awet', 'jumbo'
+      kebutuhanBobot: 'all',     // 'all', 'ultralight', 'standar', 'bebas'
+      kebutuhanLayar: 'all',     // 'all', 'standar', 'akurat', 'oled'
+      kebutuhanGaransi: 'all',   // 'all', '1_tahun', '2_tahun', '3_tahun_adp'
+      kebutuhanUpgrade: 'all'    // 'all', 'onboard', 'ada_slot', 'dual_slot'
     },
 
     // Filter Tambahan (Opsional)
@@ -1279,58 +1279,79 @@ function spkApp() {
         C10: 50  // Upgradeability
       };
 
-      // 1. Pengaruh Input Nominal Budget (Kriteria C1 - Harga)
-      if (budget > 0 && budget <= 10000000) {
-        // Budget hemat (<= 10 Juta): Faktor harga paling utama & mutlak
-        scores.C1 += 65;
-      } else if (budget > 10000000 && budget <= 16000000) {
-        scores.C1 += 35;
-      } else if (budget > 16000000 && budget <= 25000000) {
-        scores.C1 += 15;
-      } else if (budget > 25000000) {
-        // Budget besar/bebas: Harga bukan kendala, performa nomor satu
-        scores.C1 -= 25;
+      // 1. Pengaruh Input Nominal Budget & Preferensi Harga (Kriteria C1 - Harga, Cost)
+      if (budget > 0 && budget <= 8000000) {
+        scores.C1 += 75; // Budget sangat ketat <= 8 Jt: Harga mutlak #1
+      } else if (budget > 8000000 && budget <= 12000000) {
+        scores.C1 += 50; // Budget menengah ke bawah 8-12 Jt: Harga sangat penting
+      } else if (budget > 12000000 && budget <= 18000000) {
+        scores.C1 += 25; // Budget mid-range 12-18 Jt
+      } else if (budget > 18000000 && budget <= 28000000) {
+        scores.C1 += 5;  // Budget tinggi
+      } else if (budget > 28000000) {
+        scores.C1 -= 25; // Budget sultan: Harga bukan kendala, performa utama
       }
 
-      // Pengaruh Preferensi Kehematan Harga
       if (form.preferensiHarga === 'hemat') scores.C1 += 40;
       else if (form.preferensiHarga === 'bebas') scores.C1 -= 30;
 
-      // 2. Kebutuhan Kecepatan Prosesor CPU (C2)
-      if (form.kebutuhanCPU === 'kencang') scores.C2 += 50;
-      else if (form.kebutuhanCPU === 'standar') scores.C2 += 20;
+      // 2. Kebutuhan Kecepatan Prosesor CPU (C2 - Benefit)
+      if (form.kebutuhanCPU === 'high') scores.C2 += 65;      // i7/i9/R7/R9/M-Series
+      else if (form.kebutuhanCPU === 'mid') scores.C2 += 30;  // i3/i5/R3/R5
+      else if (form.kebutuhanCPU === 'entry') scores.C2 += 10;// Celeron/Athlon
+      else if (form.kebutuhanCPU === 'all') scores.C2 -= 10;
 
-      // 3. Kebutuhan Memori RAM (C3)
-      if (form.kebutuhanRAM === 'besar') scores.C3 += 45;
-      else if (form.kebutuhanRAM === 'standar') scores.C3 += 15;
+      // 3. Kebutuhan Memori RAM (C3 - Benefit)
+      if (form.kebutuhanRAM === '64') scores.C3 += 75;
+      else if (form.kebutuhanRAM === '32') scores.C3 += 60;
+      else if (form.kebutuhanRAM === '16') scores.C3 += 35;
+      else if (form.kebutuhanRAM === '8') scores.C3 += 15;
+      else if (form.kebutuhanRAM === '4') scores.C3 += 5;
+      else if (form.kebutuhanRAM === 'all') scores.C3 -= 10;
 
-      // 4. Kebutuhan Penyimpanan SSD (C4)
-      if (form.kebutuhanSSD === 'lega') scores.C4 += 40;
-      else if (form.kebutuhanSSD === 'standar') scores.C4 += 15;
+      // 4. Kebutuhan Penyimpanan SSD (C4 - Benefit)
+      if (form.kebutuhanSSD === '2048') scores.C4 += 70;  // 2 TB
+      else if (form.kebutuhanSSD === '1024') scores.C4 += 55; // 1 TB
+      else if (form.kebutuhanSSD === '512') scores.C4 += 30;  // 512 GB
+      else if (form.kebutuhanSSD === '256') scores.C4 += 15;  // 256 GB
+      else if (form.kebutuhanSSD === '128') scores.C4 += 5;   // 128 GB
+      else if (form.kebutuhanSSD === 'all') scores.C4 -= 10;
 
-      // 5. Kebutuhan Grafis & Gaming 3D GPU (C5)
-      if (form.kebutuhanGPU === 'gaming') scores.C5 += 55;
-      else if (form.kebutuhanGPU === 'standar') scores.C5 -= 15;
+      // 5. Kebutuhan Grafis & Game GPU (C5 - Benefit)
+      if (form.kebutuhanGPU === 'high_discrete') scores.C5 += 70;  // RTX 4060/4070/4080/4090
+      else if (form.kebutuhanGPU === 'entry_discrete') scores.C5 += 40; // GTX / RTX 2050/3050
+      else if (form.kebutuhanGPU === 'integrated') scores.C5 -= 15; // Intel UHD/Iris Xe/Radeon
+      else if (form.kebutuhanGPU === 'all') scores.C5 -= 10;
 
-      // 6. Kebutuhan Daya Tahan Baterai (C6)
-      if (form.kebutuhanBaterai === 'awet') scores.C6 += 50;
-      else if (form.kebutuhanBaterai === 'standar') scores.C6 += 15;
+      // 6. Kebutuhan Daya Tahan Baterai (C6 - Benefit)
+      if (form.kebutuhanBaterai === 'jumbo') scores.C6 += 65;  // 80-99 Wh
+      else if (form.kebutuhanBaterai === 'awet') scores.C6 += 45;   // 55-75 Wh
+      else if (form.kebutuhanBaterai === 'standar') scores.C6 += 15;// 35-50 Wh
+      else if (form.kebutuhanBaterai === 'all') scores.C6 -= 10;
 
-      // 7. Kebutuhan Bobot Ringan / Portabel (C7)
-      if (form.kebutuhanBobot === 'ringan') scores.C7 += 50;
-      else if (form.kebutuhanBobot === 'standar') scores.C7 += 15;
+      // 7. Kebutuhan Bobot Ringan / Portabel (C7 - Cost)
+      if (form.kebutuhanBobot === 'ultralight') scores.C7 += 65; // <= 1.3 kg
+      else if (form.kebutuhanBobot === 'standar') scores.C7 += 30;   // 1.4 - 1.8 kg
+      else if (form.kebutuhanBobot === 'bebas') scores.C7 -= 20;     // >= 1.9 kg
+      else if (form.kebutuhanBobot === 'all') scores.C7 -= 10;
 
-      // 8. Kebutuhan Layar & Warna Akurat (C8)
-      if (form.kebutuhanLayar === 'oled') scores.C8 += 50;
-      else if (form.kebutuhanLayar === 'standar') scores.C8 += 15;
+      // 8. Kebutuhan Kualitas Layar (C8 - Benefit)
+      if (form.kebutuhanLayar === 'oled') scores.C8 += 65;   // OLED 3K/4K / 240Hz
+      else if (form.kebutuhanLayar === 'akurat') scores.C8 += 45; // 100% sRGB / 2.8K / 144Hz
+      else if (form.kebutuhanLayar === 'standar') scores.C8 += 15;// HD / FHD Biasa
+      else if (form.kebutuhanLayar === 'all') scores.C8 -= 10;
 
-      // 9. Kebutuhan Garansi Resmi & ADP (C9)
-      if (form.kebutuhanGaransi === 'panjang') scores.C9 += 45;
-      else if (form.kebutuhanGaransi === 'standar') scores.C9 += 15;
+      // 9. Kebutuhan Garansi Resmi & ADP (C9 - Benefit)
+      if (form.kebutuhanGaransi === '3_tahun_adp') scores.C9 += 60; // 2-3 Thn + ADP
+      else if (form.kebutuhanGaransi === '2_tahun') scores.C9 += 35; // 2 Thn Resmi
+      else if (form.kebutuhanGaransi === '1_tahun') scores.C9 += 10; // 1 Thn
+      else if (form.kebutuhanGaransi === 'all') scores.C9 -= 10;
 
-      // 10. Kebutuhan Kemudahan Upgrade RAM/SSD (C10)
-      if (form.kebutuhanUpgrade === 'wajib') scores.C10 += 50;
-      else if (form.kebutuhanUpgrade === 'standar') scores.C10 += 15;
+      // 10. Kebutuhan Kemudahan Upgrade RAM & SSD (C10 - Benefit)
+      if (form.kebutuhanUpgrade === 'dual_slot') scores.C10 += 65; // Dual Slot RAM + Dual SSD
+      else if (form.kebutuhanUpgrade === 'ada_slot') scores.C10 += 35;  // 1 Slot Kosong
+      else if (form.kebutuhanUpgrade === 'onboard') scores.C10 -= 15;   // Full On-Board
+      else if (form.kebutuhanUpgrade === 'all') scores.C10 -= 10;
 
       // Urutkan skor kriteria dari tertinggi ke terendah -> Hasilkan Rank 1 s/d 10
       const sortedKeys = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
@@ -1351,7 +1372,7 @@ function spkApp() {
       const top3 = this.kriteriaList.find(k => k.rank === 3);
 
       const budgetStr = budget > 0 ? `Batas Budget Rp ${Number(budget).toLocaleString('id-ID')}` : 'Semua Budget';
-      this.penjelasanTranslasiROC = `Berdasarkan ${budgetStr} dan pilihan kebutuhan Anda: Kriteria ${top1.nama} (${top1.kode}) menempati Prioritas #1 (Rank 1 • ${(top1.bobot*100).toFixed(2)}%), disusul ${top2.nama} (${top2.kode}) di Rank 2 (${(top2.bobot*100).toFixed(2)}%), dan ${top3.nama} (${top3.kode}) di Rank 3 (${(top3.bobot*100).toFixed(2)}%).`;
+      this.penjelasanTranslasiROC = `Berdasarkan ${budgetStr} dan rincian spesifikasi yang Anda pilih: Kriteria ${top1.nama} (${top1.kode}) menempati Prioritas #1 (Rank 1 • ${(top1.bobot*100).toFixed(2)}%), disusul ${top2.nama} (${top2.kode}) di Rank 2 (${(top2.bobot*100).toFixed(2)}%), dan ${top3.nama} (${top3.kode}) di Rank 3 (${(top3.bobot*100).toFixed(2)}%).`;
     },
 
     setBudget(amount) {
@@ -1368,15 +1389,15 @@ function spkApp() {
       this.konsultasiForm = {
         budgetAmount: 10000000,
         preferensiHarga: 'hemat',
-        kebutuhanCPU: 'standar',
-        kebutuhanRAM: 'standar',
-        kebutuhanSSD: 'standar',
-        kebutuhanGPU: 'standar',
-        kebutuhanBaterai: 'awet',
-        kebutuhanBobot: 'ringan',
-        kebutuhanLayar: 'standar',
-        kebutuhanGaransi: 'standar',
-        kebutuhanUpgrade: 'standar'
+        kebutuhanCPU: 'all',
+        kebutuhanRAM: 'all',
+        kebutuhanSSD: 'all',
+        kebutuhanGPU: 'all',
+        kebutuhanBaterai: 'all',
+        kebutuhanBobot: 'all',
+        kebutuhanLayar: 'all',
+        kebutuhanGaransi: 'all',
+        kebutuhanUpgrade: 'all'
       };
       this.brandFilter = 'all';
       this.kategoriFilter = 'all';

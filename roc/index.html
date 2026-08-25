@@ -237,12 +237,26 @@
         <!-- 1. BUDGET MAKSIMAL (SATU-SATUNYA INPUT BUDGET) -->
         <div class="p-4.5 rounded-2xl bg-gradient-to-r from-indigo-50/80 via-sky-50/40 to-slate-50 border border-indigo-100 shadow-2xs">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- 1. BUDGET MAKSIMAL & PREFERENSI HARGA (KRITERIA C1 - HARGA) -->
+        <div class="p-4.5 rounded-2xl bg-gradient-to-r from-indigo-50/80 via-sky-50/40 to-slate-50 border border-indigo-100 shadow-2xs">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div class="max-w-md">
               <label class="text-xs font-extrabold text-slate-900 flex items-center space-x-1.5">
                 <span class="text-base">💰</span>
                 <span>Batas Maksimal Budget yang Anda Siapkan:</span>
               </label>
               <p class="text-[11px] text-slate-500 mt-0.5">Budget $\le$ Rp 10 Juta otomatis menempatkan kriteria <strong>Harga (C1) di Rank 1 (Prioritas Utama • 29.29%)</strong>.</p>
+              
+              <!-- Preferensi Kehematan Biaya -->
+              <div class="mt-2.5 flex items-center space-x-2">
+                <span class="text-[10.5px] font-bold text-slate-600">Prioritas Biaya:</span>
+                <select x-model="konsultasiForm.preferensiHarga" @change="translateKonsultasiToROC()"
+                        class="text-[11px] font-bold bg-white border border-indigo-200 rounded-lg px-2 py-1 text-indigo-700">
+                  <option value="hemat">💰 Sangat Utamakan Harga Termurah / Hemat</option>
+                  <option value="wajar">⚖️ Value for Money / Harga Wajar</option>
+                  <option value="bebas">💎 Bebas / Performa Utama (Budget Bukan Masalah)</option>
+                </select>
+              </div>
             </div>
             
             <div class="flex-grow max-w-lg">
@@ -256,6 +270,8 @@
               <div class="flex flex-wrap gap-1 mt-2">
                 <button @click="setBudget(null)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
                         :class="!konsultasiForm.budgetAmount ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">Semua Budget</button>
+                <button @click="setBudget(6000000)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
+                        :class="konsultasiForm.budgetAmount === 6000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 6 Juta</button>
                 <button @click="setBudget(8000000)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
                         :class="konsultasiForm.budgetAmount === 8000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 8 Juta</button>
                 <button @click="setBudget(10000000)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
@@ -265,13 +281,13 @@
                 <button @click="setBudget(22000000)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
                         :class="konsultasiForm.budgetAmount === 22000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 22 Juta</button>
                 <button @click="setBudget(30000000)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
-                        :class="konsultasiForm.budgetAmount === 30000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 30 Juta</button>
+                        :class="konsultasiForm.budgetAmount === 30000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 30 Juta+</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- GRID 9 ASPEK SPESIFIKASI (FLEKSIBEL TANPA PRESET KAKU) -->
+        <!-- GRID 9 ASPEK SPESIFIKASI (PILIHAN TEKNIS GRANULAR & FLEKSIBEL) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           
           <!-- 2. CPU / PROSESOR -->
@@ -279,15 +295,16 @@
             <div>
               <div class="flex items-center space-x-1.5 mb-1">
                 <span class="text-base">🚀</span>
-                <span class="text-xs font-bold text-slate-900">Kecepatan Prosesor (CPU)</span>
+                <span class="text-xs font-bold text-slate-900">Kecepatan Prosesor (CPU - C2)</span>
               </div>
-              <p class="text-[10.5px] text-slate-500 mb-2">Untuk komputasi, multitasking, & aplikasi berat.</p>
+              <p class="text-[10.5px] text-slate-500 mb-2">Tingkat komputasi & performa inti prosesor.</p>
             </div>
             <select x-model="konsultasiForm.kebutuhanCPU" @change="translateKonsultasiToROC()"
                     class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              <option value="kencang">🔥 Sangat Kencang (Coding / Render 3D / Berat)</option>
-              <option value="standar">⚡ Standar Cepat (Office / Kuliah / Browsing)</option>
-              <option value="biasa">🍃 Biasa Saja</option>
+              <option value="all">Semua / Bebas (Tidak Khusus)</option>
+              <option value="entry">Entry Level (Celeron / N100 / Athlon - Tugas Ringan)</option>
+              <option value="mid">Mid-Range (Core i3 / i5 / Ryzen 3 / Ryzen 5 - Kerja/Kuliah)</option>
+              <option value="high">High-End (Core i7 / i9 / Ryzen 7 / 9 / Apple M - Berat/Coding/3D)</option>
             </select>
           </div>
 
@@ -296,15 +313,18 @@
             <div>
               <div class="flex items-center space-x-1.5 mb-1">
                 <span class="text-base">🧠</span>
-                <span class="text-xs font-bold text-slate-900">Kapasitas Memori RAM</span>
+                <span class="text-xs font-bold text-slate-900">Kapasitas Memori RAM (C3)</span>
               </div>
-              <p class="text-[10.5px] text-slate-500 mb-2">Agar buka banyak aplikasi tanpa lag.</p>
+              <p class="text-[10.5px] text-slate-500 mb-2">Kapasitas multitasking buka banyak tab & aplikasi.</p>
             </div>
             <select x-model="konsultasiForm.kebutuhanRAM" @change="translateKonsultasiToROC()"
                     class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              <option value="besar">🚀 RAM Besar (16GB - 32GB+ Multitasking)</option>
-              <option value="standar">✨ Standar (8GB - 16GB Cukup Harian)</option>
-              <option value="biasa">🍃 Bebas / Biasa</option>
+              <option value="all">Semua / Bebas</option>
+              <option value="4">4 GB RAM (Tugas Sangat Ringan)</option>
+              <option value="8">8 GB RAM (Standar Office & Browsing)</option>
+              <option value="16">16 GB RAM (Rekomendasi Nyaman Kerja & Kuliah)</option>
+              <option value="32">32 GB RAM (Besar untuk Desain, Edit & Gaming)</option>
+              <option value="64">64 GB RAM (Ekstra Besar Workstation / Data)</option>
             </select>
           </div>
 
@@ -313,14 +333,18 @@
             <div>
               <div class="flex items-center space-x-1.5 mb-1">
                 <span class="text-base">💾</span>
-                <span class="text-xs font-bold text-slate-900">Penyimpanan Cepat SSD</span>
+                <span class="text-xs font-bold text-slate-900">Penyimpanan Cepat SSD (C4)</span>
               </div>
-              <p class="text-[10.5px] text-slate-500 mb-2">Kecepatan booting & simpan dokumen/game.</p>
+              <p class="text-[10.5px] text-slate-500 mb-2">Kecepatan booting & kapasitas simpan data/game.</p>
             </div>
             <select x-model="konsultasiForm.kebutuhanSSD" @change="translateKonsultasiToROC()"
                     class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              <option value="lega">📦 Kapasitas Lega (1TB+ SSD NVMe Cepat)</option>
-              <option value="standar">⚡ Standar Cepat (512GB SSD)</option>
+              <option value="all">Semua / Bebas</option>
+              <option value="128">128 GB SSD (Penyimpanan Minimalis)</option>
+              <option value="256">256 GB SSD (Standar OS & Dokumen)</option>
+              <option value="512">512 GB SSD NVMe (Ideal Banyak File & Aplikasi)</option>
+              <option value="1024">1 TB / 1024 GB SSD (Kapasitas Lega & Koleksi Game)</option>
+              <option value="2048">2 TB / 2048 GB SSD (Sangat Ekstra Besar Video/3D)</option>
             </select>
           </div>
 
@@ -329,14 +353,16 @@
             <div>
               <div class="flex items-center space-x-1.5 mb-1">
                 <span class="text-base">🎮</span>
-                <span class="text-xs font-bold text-slate-900">Kemampuan Grafis & Game (GPU)</span>
+                <span class="text-xs font-bold text-slate-900">Kemampuan Grafis & Game (GPU - C5)</span>
               </div>
-              <p class="text-[10.5px] text-slate-500 mb-2">Untuk Game 3D, visual, & rendering video.</p>
+              <p class="text-[10.5px] text-slate-500 mb-2">Untuk Game 3D, visual grafis, & rendering video.</p>
             </div>
             <select x-model="konsultasiForm.kebutuhanGPU" @change="translateKonsultasiToROC()"
                     class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              <option value="gaming">🎮 Wajib GPU Diskrit (Gaming 3D / Render)</option>
-              <option value="standar">💻 Grafis Standar Cukup (Bukan Game Berat)</option>
+              <option value="all">Semua / Bebas</option>
+              <option value="integrated">Grafis Terintegrasi (Intel UHD / Iris Xe / Radeon)</option>
+              <option value="entry_discrete">Dedicated GPU Entry (GTX / RTX 2050 / RTX 3050)</option>
+              <option value="high_discrete">Dedicated GPU High-End (RTX 4060 / 4070 / 4080 / 4090)</option>
             </select>
           </div>
 
@@ -345,14 +371,16 @@
             <div>
               <div class="flex items-center space-x-1.5 mb-1">
                 <span class="text-base">🔋</span>
-                <span class="text-xs font-bold text-slate-900">Daya Tahan Baterai</span>
+                <span class="text-xs font-bold text-slate-900">Daya Tahan Baterai (C6)</span>
               </div>
-              <p class="text-[10.5px] text-slate-500 mb-2">Mobilitas penggunaan jauh dari colokan listrik.</p>
+              <p class="text-[10.5px] text-slate-500 mb-2">Kapasitas baterai saat bepergian tanpa colokan.</p>
             </div>
             <select x-model="konsultasiForm.kebutuhanBaterai" @change="translateKonsultasiToROC()"
                     class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              <option value="awet">🔋 Wajib Baterai Awet (Tahan Seharian Luar)</option>
-              <option value="standar">⚡ Standar (Sering Dekat Colokan)</option>
+              <option value="all">Semua / Bebas</option>
+              <option value="standar">Standar Harian (35 - 50 Wh - Sering Dekat Colokan)</option>
+              <option value="awet">Awet & Tahan Lama (55 - 75 Wh - Seharian Luar Ruangan)</option>
+              <option value="jumbo">Baterai Ekstra Jumbo (80 - 99 Wh - Standar Maksimal Pesawat)</option>
             </select>
           </div>
 
@@ -361,14 +389,16 @@
             <div>
               <div class="flex items-center space-x-1.5 mb-1">
                 <span class="text-base">🪶</span>
-                <span class="text-xs font-bold text-slate-900">Bobot & Ringan Dibawa</span>
+                <span class="text-xs font-bold text-slate-900">Bobot & Ringan Dibawa (C7)</span>
               </div>
-              <p class="text-[10.5px] text-slate-500 mb-2">Kemudahan dibawa di tas ransel harian.</p>
+              <p class="text-[10.5px] text-slate-500 mb-2">Kemudahan dibawa & ketipisan bodi laptop.</p>
             </div>
             <select x-model="konsultasiForm.kebutuhanBobot" @change="translateKonsultasiToROC()"
                     class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              <option value="ringan">🪶 Wajib Sangat Ringan (&le; 1.4 kg Tipis)</option>
-              <option value="standar">💼 Bobot Bebas / Standar</option>
+              <option value="all">Semua / Bebas</option>
+              <option value="ultralight">Sangat Ringan & Tipis (≤ 1.3 kg - Masuk Tas Kecil)</option>
+              <option value="standar">Ringan Standar (1.4 - 1.8 kg - Nyaman Sehari-hari)</option>
+              <option value="bebas">Desktop Replacement / Bebas (≥ 1.9 kg - Tebal Tidak Masalah)</option>
             </select>
           </div>
 
@@ -377,14 +407,16 @@
             <div>
               <div class="flex items-center space-x-1.5 mb-1">
                 <span class="text-base">✨</span>
-                <span class="text-xs font-bold text-slate-900">Kualitas Visual Layar</span>
+                <span class="text-xs font-bold text-slate-900">Kualitas Visual Layar (C8)</span>
               </div>
-              <p class="text-[10.5px] text-slate-500 mb-2">Ketajaman warna, panel OLED, & refresh rate.</p>
+              <p class="text-[10.5px] text-slate-500 mb-2">Ketajaman resolusi, panel OLED, & refresh rate.</p>
             </div>
             <select x-model="konsultasiForm.kebutuhanLayar" @change="translateKonsultasiToROC()"
                     class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              <option value="oled">🎨 Wajib Layar Akurat (OLED / 100% sRGB / 144Hz)</option>
-              <option value="standar">🖥️ Layar Standar FHD Cukup</option>
+              <option value="all">Semua / Bebas</option>
+              <option value="standar">Standar Layar (HD / Full HD IPS Biasa - Dokumen & Mengetik)</option>
+              <option value="akurat">Warna Akurat (100% sRGB / 2.8K IPS / 144Hz - Desain/Nonton)</option>
+              <option value="oled">Premium OLED (OLED 3K/4K / 240Hz / Retina - Visual Sempurna)</option>
             </select>
           </div>
 
@@ -393,14 +425,16 @@
             <div>
               <div class="flex items-center space-x-1.5 mb-1">
                 <span class="text-base">🛡️</span>
-                <span class="text-xs font-bold text-slate-900">Garansi Resmi & Proteksi</span>
+                <span class="text-xs font-bold text-slate-900">Garansi Resmi & Proteksi (C9)</span>
               </div>
-              <p class="text-[10.5px] text-slate-500 mb-2">Layanan purna jual & perlindungan ADP.</p>
+              <p class="text-[10.5px] text-slate-500 mb-2">Layanan purna jual & perlindungan kerusakan ADP.</p>
             </div>
             <select x-model="konsultasiForm.kebutuhanGaransi" @change="translateKonsultasiToROC()"
                     class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              <option value="panjang">🛡️ Wajib Garansi Panjang + Proteksi ADP</option>
-              <option value="standar">📜 Garansi Standar 1-2 Tahun</option>
+              <option value="all">Semua / Bebas</option>
+              <option value="1_tahun">1 Tahun Garansi Toko / Distributor Resmi</option>
+              <option value="2_tahun">2 Tahun Garansi Resmi Distributor</option>
+              <option value="3_tahun_adp">2-3 Tahun Resmi + Proteksi Kerusakan ADP / On-Site Service</option>
             </select>
           </div>
 
@@ -409,14 +443,16 @@
             <div>
               <div class="flex items-center space-x-1.5 mb-1">
                 <span class="text-base">🔧</span>
-                <span class="text-xs font-bold text-slate-900">Kemudahan Upgrade Sendiri</span>
+                <span class="text-xs font-bold text-slate-900">Kemudahan Upgrade Sendiri (C10)</span>
               </div>
-              <p class="text-[10.5px] text-slate-500 mb-2">Slot tambahan RAM/SSD untuk jangka panjang.</p>
+              <p class="text-[10.5px] text-slate-500 mb-2">Slot tambahan RAM/SSD untuk masa depan.</p>
             </div>
             <select x-model="konsultasiForm.kebutuhanUpgrade" @change="translateKonsultasiToROC()"
                     class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              <option value="wajib">🔧 Wajib Bisa Tambah RAM & SSD Sendiri</option>
-              <option value="standar">📦 On-Board / Tanpa Upgrade Tidak Masalah</option>
+              <option value="all">Semua / Bebas</option>
+              <option value="onboard">Full On-Board (Tidak Perlu Upgrade - Cukup Bawaan Pabrik)</option>
+              <option value="ada_slot">Ada Slot Kosong (Minimal 1 Slot SSD M.2 atau 1 Slot SODIMM RAM)</option>
+              <option value="dual_slot">Dual Slot RAM + Dual M.2 SSD (Sangat Mudah Upgrade Total)</option>
             </select>
           </div>
 

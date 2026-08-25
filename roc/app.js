@@ -1438,14 +1438,15 @@ function spkApp() {
       } else if (budget > 18000000 && budget <= 28000000) {
         scores.C1 += 10; // Budget tinggi
       } else if (budget > 28000000) {
-        scores.C1 -= 25; // Budget sultan: Harga bukan kendala, performa utama
+        scores.C1 -= 25; // Budget sultan > 28 Jt: Harga bukan kendala, performa utama
+      } else if (!budget || budget === 0) {
+        scores.C1 -= 35; // SEMUA BUDGET / TANPA BATAS: Harga bukan prioritas sama sekali (Rank paling bawah/Rank 10)
       }
 
       // 2. Kebutuhan Kecepatan Prosesor CPU (C2 - Benefit)
       if (form.kebutuhanCPU === 'high') scores.C2 += 65;      // i7/i9/R7/R9/M-Series
       else if (form.kebutuhanCPU === 'mid') scores.C2 += 30;  // i3/i5/R3/R5
       else if (form.kebutuhanCPU === 'entry') scores.C2 += 10;// Celeron/Athlon
-      else if (form.kebutuhanCPU === 'all') scores.C2 -= 10;
 
       // 3. Kebutuhan Memori RAM (C3 - Benefit)
       if (form.kebutuhanRAM === '64') scores.C3 += 75;
@@ -1453,7 +1454,6 @@ function spkApp() {
       else if (form.kebutuhanRAM === '16') scores.C3 += 35;
       else if (form.kebutuhanRAM === '8') scores.C3 += 15;
       else if (form.kebutuhanRAM === '4') scores.C3 += 5;
-      else if (form.kebutuhanRAM === 'all') scores.C3 -= 10;
 
       // 4. Kebutuhan Penyimpanan SSD (C4 - Benefit)
       if (form.kebutuhanSSD === '2048') scores.C4 += 70;  // 2 TB
@@ -1461,43 +1461,34 @@ function spkApp() {
       else if (form.kebutuhanSSD === '512') scores.C4 += 30;  // 512 GB
       else if (form.kebutuhanSSD === '256') scores.C4 += 15;  // 256 GB
       else if (form.kebutuhanSSD === '128') scores.C4 += 5;   // 128 GB
-      else if (form.kebutuhanSSD === 'all') scores.C4 -= 10;
 
       // 5. Kebutuhan Grafis & Game GPU (C5 - Benefit)
       if (form.kebutuhanGPU === 'high_discrete') scores.C5 += 70;  // RTX 4060/4070/4080/4090
       else if (form.kebutuhanGPU === 'entry_discrete') scores.C5 += 40; // GTX / RTX 2050/3050
-      else if (form.kebutuhanGPU === 'integrated') scores.C5 -= 15; // Intel UHD/Iris Xe/Radeon
-      else if (form.kebutuhanGPU === 'all') scores.C5 -= 10;
 
       // 6. Kebutuhan Daya Tahan Baterai (C6 - Benefit)
       if (form.kebutuhanBaterai === 'jumbo') scores.C6 += 65;  // 80-99 Wh
       else if (form.kebutuhanBaterai === 'awet') scores.C6 += 45;   // 55-75 Wh
       else if (form.kebutuhanBaterai === 'standar') scores.C6 += 15;// 35-50 Wh
-      else if (form.kebutuhanBaterai === 'all') scores.C6 -= 10;
 
       // 7. Kebutuhan Bobot Ringan / Portabel (C7 - Cost)
       if (form.kebutuhanBobot === 'ultralight') scores.C7 += 65; // <= 1.3 kg
       else if (form.kebutuhanBobot === 'standar') scores.C7 += 30;   // 1.4 - 1.8 kg
       else if (form.kebutuhanBobot === 'bebas') scores.C7 -= 20;     // >= 1.9 kg
-      else if (form.kebutuhanBobot === 'all') scores.C7 -= 10;
 
       // 8. Kebutuhan Kualitas Layar (C8 - Benefit)
       if (form.kebutuhanLayar === 'oled') scores.C8 += 65;   // OLED 3K/4K / 240Hz
       else if (form.kebutuhanLayar === 'akurat') scores.C8 += 45; // 100% sRGB / 2.8K / 144Hz
       else if (form.kebutuhanLayar === 'standar') scores.C8 += 15;// HD / FHD Biasa
-      else if (form.kebutuhanLayar === 'all') scores.C8 -= 10;
 
       // 9. Kebutuhan Garansi Resmi & ADP (C9 - Benefit)
       if (form.kebutuhanGaransi === '3_tahun_adp') scores.C9 += 60; // 2-3 Thn + ADP
       else if (form.kebutuhanGaransi === '2_tahun') scores.C9 += 35; // 2 Thn Resmi
       else if (form.kebutuhanGaransi === '1_tahun') scores.C9 += 10; // 1 Thn
-      else if (form.kebutuhanGaransi === 'all') scores.C9 -= 10;
 
       // 10. Kebutuhan Kemudahan Upgrade RAM & SSD (C10 - Benefit)
       if (form.kebutuhanUpgrade === 'dual_slot') scores.C10 += 65; // Dual Slot RAM + Dual SSD
       else if (form.kebutuhanUpgrade === 'ada_slot') scores.C10 += 35;  // 1 Slot Kosong
-      else if (form.kebutuhanUpgrade === 'onboard') scores.C10 -= 15;   // Full On-Board
-      else if (form.kebutuhanUpgrade === 'all') scores.C10 -= 10;
 
       // Urutkan skor kriteria dari tertinggi ke terendah -> Hasilkan Rank 1 s/d 10
       const sortedKeys = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
@@ -1517,7 +1508,7 @@ function spkApp() {
       const top2 = this.kriteriaList.find(k => k.rank === 2);
       const top3 = this.kriteriaList.find(k => k.rank === 3);
 
-      const budgetStr = budget > 0 ? `Batas Budget Rp ${Number(budget).toLocaleString('id-ID')}` : 'Semua Budget';
+      const budgetStr = budget > 0 ? `Batas Budget Rp ${Number(budget).toLocaleString('id-ID')}` : 'Semua Budget (Tanpa Batas)';
       this.penjelasanTranslasiROC = `Berdasarkan ${budgetStr} dan rincian spesifikasi yang Anda pilih: Kriteria ${top1.nama} (${top1.kode}) menempati Prioritas #1 (Rank 1 • ${(top1.bobot*100).toFixed(2)}%), disusul ${top2.nama} (${top2.kode}) di Rank 2 (${(top2.bobot*100).toFixed(2)}%), dan ${top3.nama} (${top3.kode}) di Rank 3 (${(top3.bobot*100).toFixed(2)}%).`;
     },
 

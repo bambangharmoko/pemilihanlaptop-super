@@ -983,29 +983,12 @@ function spkApp() {
     isSaving: false,
     filterStatus: getInitialFilter(),
     
-    // Fitur Konsultasi Khusus Customer Toko Super Komputer
+    // Fitur Filter Pencarian Pelanggan (Satu-satunya Sumber Filter Bersih & Efisien)
     customerNama: '',
     budgetMaxFilter: null,
     brandFilter: 'all',
     kategoriFilter: 'all',
     searchQuery: '',
-    activePreset: 'mahasiswa',
-
-    // Mode Input ROC: 'interactive' (Bahasa Sehari-hari / Kuesioner) atau 'manual' (10 Dropdown Rank)
-    consultationMode: 'interactive',
-
-    // Form Kuesioner Bahasa Sehari-hari Pelanggan
-    userChatInput: {
-      budgetAmount: 10000000,
-      tujuanPenggunaan: 'mahasiswa', // 'mahasiswa' | 'gaming' | 'creator' | 'bisnis' | 'upgrade'
-      prioritasUtama: 'harga',      // 'harga' | 'gaming' | 'creator' | 'baterai' | 'upgrade' | 'performa'
-      mobilitas: 'sering',          // 'sering' (penting berat & baterai) | 'jarang' (performa)
-      kebutuhanUpgrade: 'sedang',   // 'sangat' | 'sedang' | 'tidak'
-      kebutuhanLayar: 'standar'     // 'oled' | 'standar'
-    },
-    
-    // Penjelasan Transparan Terjemahan Bahasa Sehari-hari ke Rank ROC
-    terjemahanPenjelasan: 'Berdasarkan budget Rp 10.000.000 & kebutuhan Kuliah & Sekolah, sistem menetapkan kriteria Harga (C1) sebagai Prioritas Utama (Rank 1 • 29.29%), disusul Baterai (C6) di Rank 2 (19.29%), dan Bobot Ringan (C7) di Rank 3 (14.29%).',
 
     toasts: [],
     lastCalculatedAt: null,
@@ -1056,8 +1039,8 @@ function spkApp() {
     },
 
     async init() {
-      // 1. Hitung bobot ROC awal dari kuesioner konsultasi bahasa sehari-hari
-      this.translateUserConsultationToROC();
+      // 1. Hitung bobot ROC awal untuk 10 kriteria
+      this.hitungBobotROC();
 
       // 2. Ambil data dari Supabase / Local Storage
       await this.loadDataLaptops(false);
@@ -1269,239 +1252,33 @@ function spkApp() {
       this.saveSettings();
     },
 
-    // APLIKASI PRESET KEBUTUHAN CUSTOMER (FITUR KHAS SPK TOKO SUPER KOMPUTER)
-    applyCustomerPreset(presetKey) {
-      this.activePreset = presetKey;
-      let newRanks = {};
-
-      switch(presetKey) {
-        case 'mahasiswa':
-          // Mahasiswa: Prioritas Harga Hemat (C1), Baterai Awet (C6), Ringan (C7), Layar Bagus (C8)
-          newRanks = { C1: 1, C6: 2, C7: 3, C8: 4, C3: 5, C4: 6, C2: 7, C9: 8, C10: 9, C5: 10 };
-          this.showToast("🎯 Preset 'Mahasiswa / Pelajar' diterapkan (Fokus Harga Hemat & Baterai).", "info");
-          break;
-
-        case 'gaming':
-          // Gaming: Prioritas GPU (C5), CPU (C2), RAM (C3), Layar High-Hz (C8), SSD (C4)
-          newRanks = { C5: 1, C2: 2, C3: 3, C8: 4, C4: 5, C6: 6, C10: 7, C9: 8, C1: 9, C7: 10 };
-          this.showToast("🎯 Preset 'Gaming & 3D Rendering' diterapkan (Fokus GPU & CPU).", "info");
-          break;
-
-        case 'creator':
-          // Creator: Prioritas Layar Akurasi Tinggi (C8), CPU (C2), RAM (C3), SSD (C4), GPU (C5)
-          newRanks = { C8: 1, C2: 2, C3: 3, C4: 4, C5: 5, C1: 6, C6: 7, C9: 8, C7: 9, C10: 10 };
-          this.showToast("🎯 Preset 'Content Creator / Desain' diterapkan (Fokus Layar OLED & CPU).", "info");
-          break;
-
-        case 'bisnis':
-          // Bisnis: Prioritas Ringan (C7), Baterai (C6), Garansi ADP (C9), Harga (C1), Layar (C8)
-          newRanks = { C7: 1, C6: 2, C9: 3, C1: 4, C8: 5, C3: 6, C2: 7, C4: 8, C10: 9, C5: 10 };
-          this.showToast("🎯 Preset 'Bisnis & Eksekutif Mobile' diterapkan (Fokus Portabilitas & Garansi).", "info");
-          break;
-
-        case 'upgrade':
-          // Investasi Jangka Panjang: Prioritas Upgradeability (C10), Garansi (C9), RAM (C3), SSD (C4)
-          newRanks = { C10: 1, C9: 2, C3: 3, C4: 4, C2: 5, C1: 6, C6: 7, C8: 8, C7: 9, C5: 10 };
-          this.showToast("🎯 Preset 'Investasi Jangka Panjang' diterapkan (Fokus Upgrade & Garansi).", "info");
-          break;
-
-        default:
-          return;
-      }
-
+    // Handler saat pengguna mengubah peringkat kriteria secara mandiri & fleksibel
+    onRankChange() {
       this.kriteriaList.forEach(k => {
-        if (newRanks[k.kode]) {
-          k.rank = newRanks[k.kode];
-        }
+        k.rank = Number(k.rank);
       });
-
       this.hitungBobotROC();
       this.saveSettings();
     },
 
-    // HELPER TRANSLASI BAHASA SEHARI-HARI PELANGGAN KE RANK 1-10 ROC
-    getLabelTujuan(key) {
-      switch(key) {
-        case 'mahasiswa': return 'Kuliah, Sekolah & Kantor Harian';
-        case 'gaming': return 'Gaming Berat & 3D Rendering';
-        case 'creator': return 'Content Creator & Desain Grafis';
-        case 'bisnis': return 'Bisnis & Eksekutif Mobile';
-        case 'upgrade': return 'Awet & Upgradable di Masa Depan';
-        default: return 'Kebutuhan Umum';
+    // Quick Setter Rank untuk Kartu Kriteria
+    setKriteriaRank(kode, newRank) {
+      const item = this.kriteriaList.find(k => k.kode === kode);
+      if (item) {
+        item.rank = Number(newRank);
+        this.hitungBobotROC();
+        this.saveSettings();
       }
     },
 
-    setChatBudget(amount) {
-      this.userChatInput.budgetAmount = amount;
-      this.translateUserConsultationToROC();
-    },
-    setChatTujuan(tujuan) {
-      this.userChatInput.tujuanPenggunaan = tujuan;
-      this.translateUserConsultationToROC();
-    },
-    setChatPrioritas(prio) {
-      this.userChatInput.prioritasUtama = prio;
-      this.translateUserConsultationToROC();
-    },
-
-    translateUserConsultationToROC() {
-      const input = this.userChatInput;
-      const budget = Number(input.budgetAmount) || 0;
-
-      // 1. Inisialisasi skor kepentingan untuk 10 kriteria
-      // Skor makin tinggi = prioritas makin utama (Rank mendekati 1)
-      const scores = {
-        C1: 50, // Harga
-        C2: 50, // CPU
-        C3: 50, // RAM
-        C4: 50, // SSD
-        C5: 50, // GPU
-        C6: 50, // Baterai
-        C7: 50, // Berat/Bobot
-        C8: 50, // Layar
-        C9: 50, // Garansi
-        C10: 50 // Upgradeability
-      };
-
-      // 2. Terjemahan Pengaruh Budget:
-      if (budget > 0 && budget <= 8000000) {
-        // Budget sangat terbatas (< 8 Jt): Harga C1 sangat krusial nomor 1
-        scores.C1 += 65;
-        scores.C6 += 25;
-        scores.C7 += 20;
-        scores.C5 -= 30;
-      } else if (budget > 8000000 && budget <= 14000000) {
-        // Budget mahasiswa/kantor menengah (8 - 14 Jt): Harga C1 penting tinggi
-        scores.C1 += 45;
-        scores.C3 += 20;
-        scores.C4 += 15;
-      } else if (budget > 14000000 && budget <= 22000000) {
-        // Budget menengah-atas (14 - 22 Jt): Seimbang antara performa & harga
-        scores.C2 += 25;
-        scores.C5 += 25;
-        scores.C1 += 15;
-      } else if (budget > 22000000) {
-        // Budget sultan/bebas (> 22 Jt): Performa tinggi dicari, harga bukan halangan utama
-        scores.C2 += 40;
-        scores.C5 += 40;
-        scores.C8 += 30;
-        scores.C1 -= 20;
-      }
-
-      // 3. Terjemahan Tujuan Penggunaan:
-      switch(input.tujuanPenggunaan) {
-        case 'mahasiswa':
-          scores.C1 += 40; // Harga
-          scores.C6 += 30; // Baterai
-          scores.C7 += 25; // Ringan
-          scores.C8 += 15; // Layar
-          scores.C5 -= 20; // GPU tidak butuh diskrit berat
-          break;
-        case 'gaming':
-          scores.C5 += 50; // GPU Gaming
-          scores.C2 += 40; // CPU Kencang
-          scores.C3 += 30; // RAM Lega
-          scores.C4 += 25; // SSD Cepat
-          scores.C8 += 20; // Layar high refresh rate
-          scores.C7 -= 25; // Berat tidak masalah
-          scores.C6 -= 15; // Baterai colok charger saat game
-          break;
-        case 'creator':
-          scores.C8 += 50; // Layar Akurasi Tinggi OLED/sRGB
-          scores.C2 += 40; // CPU Rendering
-          scores.C3 += 30; // RAM Multitasking
-          scores.C4 += 25; // SSD Kapasitas
-          scores.C5 += 25; // GPU Akselerasi
-          break;
-        case 'bisnis':
-          scores.C7 += 45; // Ringan Tipis
-          scores.C6 += 40; // Baterai Tahan Seharian
-          scores.C9 += 30; // Garansi & ADP Prioritas
-          scores.C8 += 20; // Layar Nyaman
-          scores.C5 -= 15; // GPU diskrit tidak prioritas
-          break;
-        case 'upgrade':
-          scores.C10 += 50; // Upgradeability Slot RAM/SSD
-          scores.C9 += 35;  // Garansi Panjang
-          scores.C3 += 25;  // RAM
-          scores.C4 += 25;  // SSD
-          break;
-      }
-
-      // 4. Terjemahan Prioritas Faktor Utama yang Dipilih Pengguna:
-      switch(input.prioritasUtama) {
-        case 'harga':
-          scores.C1 += 50;
-          break;
-        case 'gaming':
-          scores.C5 += 50;
-          scores.C2 += 25;
-          break;
-        case 'creator':
-          scores.C8 += 50;
-          scores.C3 += 25;
-          break;
-        case 'baterai':
-          scores.C6 += 50;
-          scores.C7 += 30;
-          break;
-        case 'upgrade':
-          scores.C10 += 50;
-          scores.C9 += 25;
-          break;
-        case 'performa':
-          scores.C2 += 40;
-          scores.C3 += 30;
-          scores.C4 += 25;
-          break;
-      }
-
-      // 5. Terjemahan Mobilitas & Bepergian:
-      if (input.mobilitas === 'sering') {
-        scores.C7 += 30; // Butuh ringan
-        scores.C6 += 25; // Butuh baterai awet
-      } else if (input.mobilitas === 'jarang') {
-        scores.C2 += 15; // Prioritas performa desktop replacement
-        scores.C5 += 15;
-      }
-
-      // 6. Terjemahan Kebutuhan Upgrade:
-      if (input.kebutuhanUpgrade === 'sangat') {
-        scores.C10 += 35;
-        scores.C9 += 15;
-      }
-
-      // 7. Terjemahan Kebutuhan Layar:
-      if (input.kebutuhanLayar === 'oled') {
-        scores.C8 += 30;
-      }
-
-      // 8. Urutkan kriteria dari skor tertinggi ke terendah -> Jadikan Rank 1 s/d 10
-      const criteriaKeys = Object.keys(scores);
-      criteriaKeys.sort((a, b) => scores[b] - scores[a]);
-
-      criteriaKeys.forEach((kode, index) => {
-        const rank = index + 1; // Rank 1 s/d 10
-        const item = this.kriteriaList.find(k => k.kode === kode);
-        if (item) {
-          item.rank = rank;
-        }
-      });
-
-      // 9. Hitung Bobot Matematis ROC m=10
-      this.hitungBobotROC();
-
-      // Sinkronkan filter budget ke pencarian
-      if (budget > 0) {
-        this.budgetMaxFilter = budget;
-      }
-
-      // Buat penjelasan ringkas
-      const rank1 = this.kriteriaList.find(k => k.rank === 1);
-      const rank2 = this.kriteriaList.find(k => k.rank === 2);
-      const rank3 = this.kriteriaList.find(k => k.rank === 3);
-
-      this.terjemahanPenjelasan = `Berdasarkan budget Rp ${Number(budget).toLocaleString('id-ID')} & kebutuhan ${this.getLabelTujuan(input.tujuanPenggunaan)}, sistem menetapkan kriteria ${rank1.nama} (${rank1.kode}) sebagai Prioritas Utama (Rank 1 • ${(rank1.bobot*100).toFixed(2)}%), disusul ${rank2.nama} (${rank2.kode}) di Rank 2 (${(rank2.bobot*100).toFixed(2)}%), dan ${rank3.nama} (${rank3.kode}) di Rank 3 (${(rank3.bobot*100).toFixed(2)}%).`;
+    // Ringkasan Prioritas Utama Terkini dalam Bahasa Sehari-hari
+    getTopPrioritasSummary() {
+      if (!this.kriteriaList || this.kriteriaList.length === 0) return '';
+      const sorted = [...this.kriteriaList].sort((a, b) => a.rank - b.rank);
+      const top1 = sorted[0];
+      const top2 = sorted[1];
+      const top3 = sorted[2];
+      return `Prioritas Utama Anda: #1 ${top1.nama} (${(top1.bobot*100).toFixed(2)}%) • #2 ${top2.nama} (${(top2.bobot*100).toFixed(2)}%) • #3 ${top3.nama} (${(top3.bobot*100).toFixed(2)}%)`;
     },
 
     // Handler saat pengguna mengubah filter ketersediaan

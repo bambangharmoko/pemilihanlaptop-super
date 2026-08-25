@@ -1349,33 +1349,53 @@ function spkApp() {
       return this.displayedHasilRanking;
     },
 
-    // Callback saat limit rekomendasi dirubah oleh user (100% Instan Reaktif)
+    // Callback saat limit rekomendasi dirubah oleh user (100% Instan Reaktif di Section 2)
     setLimitRekomendasi(val) {
       this.limitRekomendasi = String(val);
       this.updateDisplayedRanking();
     },
 
-    // Callback saat filter dirubah oleh user (HANYA kalkulasi ulang jika sudah pernah menekan tombol kalkulasi)
-    onFilterChange() {
-      if (this.hasCalculated) {
-        this.kalkulasiTOPSIS(false);
-      }
+    // Invalidate kalkulasi jika ada kriteria / filter yang diubah oleh user di Section 1
+    // (Hasil Rekomendasi HANYA akan muncul saat user menekan tombol Kalkulasi Rekomendasi Laptop Terbaik)
+    invalidateCalculation() {
+      this.hasCalculated = false;
+      this.hasilRanking = [];
+      this.displayedHasilRanking = [];
     },
 
-    onBudgetChange() {
+    // Dipanggil saat preferensi C2 - C10 diubah
+    onKonsultasiChange() {
       this.translateKonsultasiToROC();
-      this.onFilterChange();
+      this.invalidateCalculation();
+    },
+
+    // Dipanggil saat filter Merk, Search, Status diubah
+    onFilterChange() {
+      this.invalidateCalculation();
+    },
+
+    // Dipanggil saat input nominal budget diubah
+    onBudgetChange() {
+      this.budgetMaxFilter = this.konsultasiForm.budgetAmount > 0 ? this.konsultasiForm.budgetAmount : null;
+      this.translateKonsultasiToROC();
+      this.invalidateCalculation();
+    },
+
+    // Dipanggil saat tombol quick budget chip diklik
+    setBudget(amount) {
+      this.konsultasiForm.budgetAmount = amount;
+      this.budgetMaxFilter = amount > 0 ? amount : null;
+      this.translateKonsultasiToROC();
+      this.invalidateCalculation();
     },
 
     setQuickBudget(val) {
-      this.budgetMaxFilter = val;
-      this.konsultasiForm.budgetAmount = val;
-      this.translateKonsultasiToROC();
-      this.onFilterChange();
+      this.setBudget(val);
     },
+
     setStatusFilter(s) {
       this.filterStatus = s;
-      this.onFilterChange();
+      this.invalidateCalculation();
     },
     resetAllFilters() {
       this.budgetMaxFilter = null;
@@ -1386,7 +1406,7 @@ function spkApp() {
       this.searchQuery = '';
       this.limitRekomendasi = '5';
       this.translateKonsultasiToROC();
-      this.onFilterChange();
+      this.invalidateCalculation();
       this.showToast("Semua filter pencarian telah direset.", "info");
     },
 
@@ -1527,18 +1547,6 @@ function spkApp() {
 
       const budgetStr = budget > 0 ? `Batas Budget Rp ${Number(budget).toLocaleString('id-ID')}` : 'Semua Budget (Tanpa Batas)';
       this.penjelasanTranslasiROC = `Berdasarkan ${budgetStr} dan rincian spesifikasi yang Anda pilih: Kriteria ${top1.nama} (${top1.kode}) menempati Prioritas #1 (Rank 1 • ${(top1.bobot*100).toFixed(2)}%), disusul ${top2.nama} (${top2.kode}) di Rank 2 (${(top2.bobot*100).toFixed(2)}%), dan ${top3.nama} (${top3.kode}) di Rank 3 (${(top3.bobot*100).toFixed(2)}%).`;
-    },
-
-    setBudget(amount) {
-      this.konsultasiForm.budgetAmount = amount;
-      this.translateKonsultasiToROC();
-      this.onFilterChange();
-    },
-
-    setKonsultasi(field, val) {
-      this.konsultasiForm[field] = val;
-      this.translateKonsultasiToROC();
-      this.onFilterChange();
     },
 
     resetKonsultasi() {

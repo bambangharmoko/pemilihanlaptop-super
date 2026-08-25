@@ -613,7 +613,7 @@ function spkLopcowApp() {
 
       ranked.sort((a, b) => b.skorVi - a.skorVi);
       this.hasilRanking = ranked;
-      this.matriksData = { pembagi, matrixR, matrixY, APlus, AMinus };
+      this.matriksData = { pembagi, matrixR, matrixY, APlus, AMinus, lopcowData: this.lopcowData };
       this.lastCalculatedAt = new Date().toLocaleTimeString('id-ID');
 
       if (isUserClick) {

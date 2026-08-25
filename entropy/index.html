@@ -641,9 +641,50 @@
         </div>
 
         <div class="mt-4 space-y-6 text-xs" x-show="matriksData">
-          <!-- Bobot Hasil Entropy -->
+          <!-- 1. Matriks Proporsi P_ij -->
+          <div x-show="matriksData && matriksData.entropyData">
+            <h4 class="font-bold text-emerald-950 text-xs mb-2">1. Matriks Proporsi ($P_{ij} = x_{ij} / \sum x_{kj}$):</h4>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-60">
+              <table class="w-full text-left text-xs font-mono">
+                <thead class="bg-emerald-50 text-emerald-950 font-bold border-b border-emerald-200">
+                  <tr>
+                    <th class="p-2.5">Laptop</th>
+                    <th class="p-2.5 text-center">P(C1)</th>
+                    <th class="p-2.5 text-center">P(C2)</th>
+                    <th class="p-2.5 text-center">P(C3)</th>
+                    <th class="p-2.5 text-center">P(C4)</th>
+                    <th class="p-2.5 text-center">P(C5)</th>
+                    <th class="p-2.5 text-center">P(C6)</th>
+                    <th class="p-2.5 text-center">P(C7)</th>
+                    <th class="p-2.5 text-center">P(C8)</th>
+                    <th class="p-2.5 text-center">P(C9)</th>
+                    <th class="p-2.5 text-center">P(C10)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <template x-for="row in (matriksData && matriksData.entropyData ? matriksData.entropyData.matrixP : [])" :key="row.id">
+                    <tr class="hover:bg-slate-50">
+                      <td class="p-2.5 font-sans font-semibold text-slate-800" x-text="row.nama"></td>
+                      <td class="p-2.5 text-center" x-text="row.harga ? row.harga.toFixed(4) : '-'"></td>
+                      <td class="p-2.5 text-center" x-text="row.cpu_score ? row.cpu_score.toFixed(4) : '-'"></td>
+                      <td class="p-2.5 text-center" x-text="row.ram_gb ? row.ram_gb.toFixed(4) : '-'"></td>
+                      <td class="p-2.5 text-center" x-text="row.ssd_gb ? row.ssd_gb.toFixed(4) : '-'"></td>
+                      <td class="p-2.5 text-center" x-text="row.gpu_score ? row.gpu_score.toFixed(4) : '-'"></td>
+                      <td class="p-2.5 text-center" x-text="row.baterai_wh ? row.baterai_wh.toFixed(4) : '-'"></td>
+                      <td class="p-2.5 text-center" x-text="row.berat_kg ? row.berat_kg.toFixed(4) : '-'"></td>
+                      <td class="p-2.5 text-center" x-text="row.layar_score ? row.layar_score.toFixed(4) : '-'"></td>
+                      <td class="p-2.5 text-center" x-text="row.garansi_score ? row.garansi_score.toFixed(4) : '-'"></td>
+                      <td class="p-2.5 text-center" x-text="row.upgrade_score ? row.upgrade_score.toFixed(4) : '-'"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2. Bobot Hasil Entropy -->
           <div class="p-4 bg-emerald-50/60 rounded-xl border border-emerald-100">
-            <h4 class="font-bold text-emerald-950 text-xs mb-2">1. Vektor Bobot Shannon Entropy ($w_j = d_j / \sum d_k$):</h4>
+            <h4 class="font-bold text-emerald-950 text-xs mb-2">2. Parameter Entropi ($E_j$), Diversitas ($d_j = 1 - E_j$), dan Bobot ($w_j$):</h4>
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
               <template x-for="k in kriteriaList" :key="k.id">
                 <div class="bg-white p-2.5 rounded-lg border border-emerald-100 flex flex-col justify-between">
@@ -651,9 +692,19 @@
                     <span class="font-bold text-slate-800" x-text="k.kode"></span>
                     <span class="text-[10px] px-1.5 py-0.5 rounded font-bold" :class="k.tipe === 'Cost' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'" x-text="k.tipe"></span>
                   </div>
-                  <div class="mt-1 flex justify-between text-[11px] font-mono">
-                    <span class="text-slate-500" x-text="'E: ' + (k.entropy_E ? k.entropy_E.toFixed(3) : '-')"></span>
-                    <span class="font-bold text-emerald-700" x-text="(k.bobot * 100).toFixed(2) + '%'"></span>
+                  <div class="mt-1 space-y-0.5 text-[11px] font-mono">
+                    <div class="flex justify-between text-slate-500">
+                      <span>E:</span>
+                      <span class="font-bold" x-text="k.entropy_E !== undefined ? k.entropy_E.toFixed(4) : '-'"></span>
+                    </div>
+                    <div class="flex justify-between text-slate-500">
+                      <span>d:</span>
+                      <span class="font-bold" x-text="k.entropy_d !== undefined ? k.entropy_d.toFixed(4) : '-'"></span>
+                    </div>
+                    <div class="flex justify-between text-emerald-700 font-bold border-t border-slate-100 pt-0.5">
+                      <span>w:</span>
+                      <span x-text="(k.bobot * 100).toFixed(2) + '%'"></span>
+                    </div>
                   </div>
                 </div>
               </template>

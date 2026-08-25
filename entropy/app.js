@@ -585,7 +585,7 @@ function spkEntropyApp() {
 
       ranked.sort((a, b) => b.skorVi - a.skorVi);
       this.hasilRanking = ranked;
-      this.matriksData = { pembagi, matrixR, matrixY, APlus, AMinus };
+      this.matriksData = { pembagi, matrixR, matrixY, APlus, AMinus, entropyData: this.entropyData };
       this.lastCalculatedAt = new Date().toLocaleTimeString('id-ID');
 
       if (isUserClick) {

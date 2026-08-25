@@ -1040,6 +1040,13 @@ function spkApp() {
     displayedHasilRanking: [],
     matriksData: null,
 
+    // Section 3: Inventaris & Database Stock Laptop (Pencarian & Paginasi Max 10 Data)
+    inventorySearch: '',
+    inventoryBrandFilter: 'all',
+    inventoryStatusFilter: 'all',
+    inventoryCurrentPage: 1,
+    inventoryPageSize: 10,
+
     // Form Model Input Laptop (Lengkap C1 - C10)
     formLaptop: {
       id: null,
@@ -1217,6 +1224,142 @@ function spkApp() {
       if (!this.laptopsData || this.laptopsData.length === 0) return [];
       const set = new Set(this.laptopsData.map(l => l.kategori_penggunaan).filter(Boolean));
       return Array.from(set).sort();
+    },
+
+    // ==========================================
+    // SECTION 3: INVENTARIS & DATABASE STOCK LAPTOP (PENCARIAN & PAGINASI MAX 10 DATA)
+    // ==========================================
+    getFilteredInventory() {
+      let list = [...this.laptopsData];
+      
+      // 1. Filter Merk
+      if (this.inventoryBrandFilter && this.inventoryBrandFilter !== 'all') {
+        list = list.filter(l => (l.merek || '').toLowerCase() === this.inventoryBrandFilter.toLowerCase());
+      }
+
+      // 2. Filter Status Stok
+      if (this.inventoryStatusFilter && this.inventoryStatusFilter !== 'all') {
+        list = list.filter(l => (l.status || '').toLowerCase() === this.inventoryStatusFilter.toLowerCase());
+      }
+
+      // 3. Search Query (Nama, Merek, Kategori, Spek, Harga)
+      if (this.inventorySearch && this.inventorySearch.trim()) {
+        const q = this.inventorySearch.trim().toLowerCase();
+        list = list.filter(l => {
+          const matchNama = (l.nama || '').toLowerCase().includes(q);
+          const matchMerek = (l.merek || '').toLowerCase().includes(q);
+          const matchKategori = (l.kategori_penggunaan || '').toLowerCase().includes(q);
+          const matchSpek = (l.spesifikasi_ringkas || '').toLowerCase().includes(q);
+          const matchHarga = String(l.harga || '').includes(q);
+          return matchNama || matchMerek || matchKategori || matchSpek || matchHarga;
+        });
+      }
+
+      return list;
+    },
+
+    getPaginatedInventory() {
+      const filtered = this.getFilteredInventory();
+      const totalPages = Math.ceil(filtered.length / this.inventoryPageSize) || 1;
+      if (this.inventoryCurrentPage > totalPages) {
+        this.inventoryCurrentPage = totalPages;
+      }
+      if (this.inventoryCurrentPage < 1) {
+        this.inventoryCurrentPage = 1;
+      }
+      const start = (this.inventoryCurrentPage - 1) * this.inventoryPageSize;
+      return filtered.slice(start, start + this.inventoryPageSize);
+    },
+
+    getInventoryTotalPages() {
+      const total = this.getFilteredInventory().length;
+      return Math.ceil(total / this.inventoryPageSize) || 1;
+    },
+
+    getInventoryPageNumbers() {
+      const total = this.getInventoryTotalPages();
+      const current = this.inventoryCurrentPage;
+      const pages = [];
+
+      if (total <= 7) {
+        for (let i = 1; i <= total; i++) pages.push(i);
+      } else {
+        if (current <= 4) {
+          pages.push(1, 2, 3, 4, 5, '...', total);
+        } else if (current >= total - 3) {
+          pages.push(1, '...', total - 4, total - 3, total - 2, total - 1, total);
+        } else {
+          pages.push(1, '...', current - 1, current, current + 1, '...', total);
+        }
+      }
+      return pages;
+    },
+
+    goToInventoryPage(p) {
+      if (p === '...') return;
+      const total = this.getInventoryTotalPages();
+      if (p >= 1 && p <= total) {
+        this.inventoryCurrentPage = p;
+      }
+    },
+
+    nextInventoryPage() {
+      if (this.inventoryCurrentPage < this.getInventoryTotalPages()) {
+        this.inventoryCurrentPage++;
+      }
+    },
+
+    prevInventoryPage() {
+      if (this.inventoryCurrentPage > 1) {
+        this.inventoryCurrentPage--;
+      }
+    },
+
+    onInventorySearchChange() {
+      this.inventoryCurrentPage = 1;
+    },
+
+    resetInventorySearch() {
+      this.inventorySearch = '';
+      this.inventoryBrandFilter = 'all';
+      this.inventoryStatusFilter = 'all';
+      this.inventoryCurrentPage = 1;
+    },
+
+    getInventoryStartNumber() {
+      const filtered = this.getFilteredInventory();
+      if (filtered.length === 0) return 0;
+      return (this.inventoryCurrentPage - 1) * this.inventoryPageSize + 1;
+    },
+
+    getInventoryEndNumber() {
+      const filtered = this.getFilteredInventory();
+      return Math.min(this.inventoryCurrentPage * this.inventoryPageSize, filtered.length);
+    },
+
+    toggleSelectAllInventory() {
+      const currentVisible = this.getPaginatedInventory();
+      const visibleIds = currentVisible.map(l => l.id);
+      const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => this.selectedLaptopIds.includes(id));
+
+      if (allVisibleSelected) {
+        this.selectedLaptopIds = this.selectedLaptopIds.filter(id => !visibleIds.includes(id));
+      } else {
+        const newSelected = new Set([...this.selectedLaptopIds, ...visibleIds]);
+        this.selectedLaptopIds = Array.from(newSelected);
+      }
+    },
+
+    isAllVisibleInventorySelected() {
+      const currentVisible = this.getPaginatedInventory();
+      if (currentVisible.length === 0) return false;
+      return currentVisible.every(l => this.selectedLaptopIds.includes(l.id));
+    },
+
+    selectAllFilteredInventory() {
+      const filtered = this.getFilteredInventory();
+      const allIds = filtered.map(l => l.id);
+      this.selectedLaptopIds = Array.from(new Set([...this.selectedLaptopIds, ...allIds]));
     },
 
     // Single Source of Truth untuk Dataset Kandidat Laptop Berdasarkan Filter & Preferensi Spek

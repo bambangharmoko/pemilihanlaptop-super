@@ -598,19 +598,19 @@
           <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
             <span class="text-[11px] font-bold text-slate-500 px-1.5 hidden md:inline">Limit:</span>
             <button type="button" @click="setLimitRekomendasi('3')" 
-                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition"
+                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer"
                     :class="limitRekomendasi == '3' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 3</button>
             <button type="button" @click="setLimitRekomendasi('5')" 
-                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition"
+                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer"
                     :class="limitRekomendasi == '5' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 5</button>
             <button type="button" @click="setLimitRekomendasi('7')" 
-                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition"
+                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer"
                     :class="limitRekomendasi == '7' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 7</button>
             <button type="button" @click="setLimitRekomendasi('10')" 
-                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition"
+                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer"
                     :class="limitRekomendasi == '10' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Top 10</button>
             <button type="button" @click="setLimitRekomendasi('all')" 
-                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition"
+                    class="px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer"
                     :class="limitRekomendasi == 'all' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-white'">Semua</button>
           </div>
 
@@ -634,7 +634,7 @@
 
       <!-- CARDS HIGHLIGHT REKOMENDASI (Sesuai Limit Yang Dipilih: Top 3, 5, 7, 10, Semua) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-        <template x-for="(laptop, index) in getDisplayedHasilRanking()" :key="laptop.id">
+        <template x-for="(laptop, index) in getDisplayedHasilRanking()" :key="laptop.id ? ('card_' + laptop.id) : ('card_' + index + '_' + (laptop.nama || ''))">
           <div class="rounded-2xl border p-5 sm:p-6 shadow-sm relative overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-md print-card"
                :class="index === 0 ? 'border-emerald-300 bg-gradient-to-b from-emerald-50/50 via-white to-white ring-2 ring-emerald-500/20' : (index === 1 ? 'border-indigo-200 bg-gradient-to-b from-indigo-50/30 via-white to-white' : (index === 2 ? 'border-amber-200 bg-gradient-to-b from-amber-50/30 via-white to-white' : 'border-slate-200 bg-white'))">
             
@@ -760,7 +760,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              <template x-for="(item, idx) in getDisplayedHasilRanking()" :key="item.id">
+              <template x-for="(item, idx) in getDisplayedHasilRanking()" :key="item.id ? ('row_' + item.id) : ('row_' + idx + '_' + (item.nama || ''))">
                 <tr class="hover:bg-slate-50/80 transition" :class="idx === 0 ? 'bg-emerald-50/20 font-semibold' : ''">
                   <!-- Rank Badge -->
                   <td class="py-3.5 px-3 text-center">

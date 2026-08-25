@@ -983,12 +983,29 @@ function spkApp() {
     isSaving: false,
     filterStatus: getInitialFilter(),
     
-    // Fitur Filter Pencarian Pelanggan (Satu-satunya Sumber Filter Bersih & Efisien)
-    customerNama: '',
-    budgetMaxFilter: null,
+    // Formulir Konsultasi Kebutuhan Laptop (Bahasa Sehari-hari yang Fleksibel & Bebas Preset Kaku)
+    konsultasiForm: {
+      budgetAmount: 10000000,    // 💰 Batas Budget Pelanggan (Satu-satunya Input Budget)
+      preferensiHarga: 'hemat',  // 'hemat', 'wajar', 'bebas'
+      kebutuhanCPU: 'standar',   // 'kencang', 'standar', 'biasa'
+      kebutuhanRAM: 'standar',   // 'besar', 'standar', 'biasa'
+      kebutuhanSSD: 'standar',   // 'lega', 'standar'
+      kebutuhanGPU: 'standar',   // 'gaming', 'standar'
+      kebutuhanBaterai: 'awet',  // 'awet', 'standar'
+      kebutuhanBobot: 'ringan',  // 'ringan', 'standar'
+      kebutuhanLayar: 'standar', // 'oled', 'standar'
+      kebutuhanGaransi: 'standar', // 'panjang', 'standar'
+      kebutuhanUpgrade: 'standar'  // 'wajib', 'standar'
+    },
+
+    // Filter Tambahan (Opsional)
     brandFilter: 'all',
     kategoriFilter: 'all',
     searchQuery: '',
+    budgetMaxFilter: 10000000,
+
+    // Teks Penjelasan Translasi Bahasa Sehari-hari ke Bobot ROC
+    penjelasanTranslasiROC: '',
 
     toasts: [],
     lastCalculatedAt: null,
@@ -1039,8 +1056,8 @@ function spkApp() {
     },
 
     async init() {
-      // 1. Hitung bobot ROC awal untuk 10 kriteria
-      this.hitungBobotROC();
+      // 1. Hitung bobot ROC awal dari formulir konsultasi kebutuhan fleksibel
+      this.translateKonsultasiToROC();
 
       // 2. Ambil data dari Supabase / Local Storage
       await this.loadDataLaptops(false);
@@ -1242,63 +1259,131 @@ function spkApp() {
       }
     },
 
-    // Handler saat pengguna mengubah rank pada dropdown kriteria
-    onRankChange() {
-      this.activePreset = null; // Custom user setting
-      this.kriteriaList.forEach(k => {
-        k.rank = Number(k.rank);
-      });
-      this.hitungBobotROC();
-      this.saveSettings();
-    },
+    // TRANSLASI FLEKSIBEL KONSULTASI BAHASA SEHARI-HARI KE RANK 1-10 ROC
+    translateKonsultasiToROC() {
+      const form = this.konsultasiForm;
+      const budget = Number(form.budgetAmount) || 0;
 
-    // Handler saat pengguna mengubah peringkat kriteria secara mandiri & fleksibel
-    onRankChange() {
-      this.kriteriaList.forEach(k => {
-        k.rank = Number(k.rank);
-      });
-      this.hitungBobotROC();
-      this.saveSettings();
-    },
+      // Inisialisasi skor kepentingan untuk 10 kriteria
+      // Skor makin tinggi = prioritas makin utama (Rank mendekati 1)
+      const scores = {
+        C1: 50,  // Harga
+        C2: 50,  // CPU
+        C3: 50,  // RAM
+        C4: 50,  // SSD
+        C5: 50,  // GPU
+        C6: 50,  // Baterai
+        C7: 50,  // Bobot/Berat
+        C8: 50,  // Layar
+        C9: 50,  // Garansi
+        C10: 50  // Upgradeability
+      };
 
-    // Quick Setter Rank untuk Kartu Kriteria
-    setKriteriaRank(kode, newRank) {
-      const item = this.kriteriaList.find(k => k.kode === kode);
-      if (item) {
-        item.rank = Number(newRank);
-        this.hitungBobotROC();
-        this.saveSettings();
+      // 1. Pengaruh Input Nominal Budget (Kriteria C1 - Harga)
+      if (budget > 0 && budget <= 10000000) {
+        // Budget hemat (<= 10 Juta): Faktor harga paling utama & mutlak
+        scores.C1 += 65;
+      } else if (budget > 10000000 && budget <= 16000000) {
+        scores.C1 += 35;
+      } else if (budget > 16000000 && budget <= 25000000) {
+        scores.C1 += 15;
+      } else if (budget > 25000000) {
+        // Budget besar/bebas: Harga bukan kendala, performa nomor satu
+        scores.C1 -= 25;
       }
-    },
 
-    // Ringkasan Prioritas Utama Terkini dalam Bahasa Sehari-hari
-    getTopPrioritasSummary() {
-      if (!this.kriteriaList || this.kriteriaList.length === 0) return '';
-      const sorted = [...this.kriteriaList].sort((a, b) => a.rank - b.rank);
-      const top1 = sorted[0];
-      const top2 = sorted[1];
-      const top3 = sorted[2];
-      return `Prioritas Utama Anda: #1 ${top1.nama} (${(top1.bobot*100).toFixed(2)}%) • #2 ${top2.nama} (${(top2.bobot*100).toFixed(2)}%) • #3 ${top3.nama} (${(top3.bobot*100).toFixed(2)}%)`;
-    },
+      // Pengaruh Preferensi Kehematan Harga
+      if (form.preferensiHarga === 'hemat') scores.C1 += 40;
+      else if (form.preferensiHarga === 'bebas') scores.C1 -= 30;
 
-    // Handler saat pengguna mengubah filter ketersediaan
-    setFilter(status) {
-      this.filterStatus = status;
-      this.saveSettings();
-    },
+      // 2. Kebutuhan Kecepatan Prosesor CPU (C2)
+      if (form.kebutuhanCPU === 'kencang') scores.C2 += 50;
+      else if (form.kebutuhanCPU === 'standar') scores.C2 += 20;
 
-    resetPrioritas() {
-      this.activePreset = null;
-      this.kriteriaList.forEach((item, i) => {
-        item.rank = i + 1;
+      // 3. Kebutuhan Memori RAM (C3)
+      if (form.kebutuhanRAM === 'besar') scores.C3 += 45;
+      else if (form.kebutuhanRAM === 'standar') scores.C3 += 15;
+
+      // 4. Kebutuhan Penyimpanan SSD (C4)
+      if (form.kebutuhanSSD === 'lega') scores.C4 += 40;
+      else if (form.kebutuhanSSD === 'standar') scores.C4 += 15;
+
+      // 5. Kebutuhan Grafis & Gaming 3D GPU (C5)
+      if (form.kebutuhanGPU === 'gaming') scores.C5 += 55;
+      else if (form.kebutuhanGPU === 'standar') scores.C5 -= 15;
+
+      // 6. Kebutuhan Daya Tahan Baterai (C6)
+      if (form.kebutuhanBaterai === 'awet') scores.C6 += 50;
+      else if (form.kebutuhanBaterai === 'standar') scores.C6 += 15;
+
+      // 7. Kebutuhan Bobot Ringan / Portabel (C7)
+      if (form.kebutuhanBobot === 'ringan') scores.C7 += 50;
+      else if (form.kebutuhanBobot === 'standar') scores.C7 += 15;
+
+      // 8. Kebutuhan Layar & Warna Akurat (C8)
+      if (form.kebutuhanLayar === 'oled') scores.C8 += 50;
+      else if (form.kebutuhanLayar === 'standar') scores.C8 += 15;
+
+      // 9. Kebutuhan Garansi Resmi & ADP (C9)
+      if (form.kebutuhanGaransi === 'panjang') scores.C9 += 45;
+      else if (form.kebutuhanGaransi === 'standar') scores.C9 += 15;
+
+      // 10. Kebutuhan Kemudahan Upgrade RAM/SSD (C10)
+      if (form.kebutuhanUpgrade === 'wajib') scores.C10 += 50;
+      else if (form.kebutuhanUpgrade === 'standar') scores.C10 += 15;
+
+      // Urutkan skor kriteria dari tertinggi ke terendah -> Hasilkan Rank 1 s/d 10
+      const sortedKeys = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
+      sortedKeys.forEach((kode, idx) => {
+        const item = this.kriteriaList.find(k => k.kode === kode);
+        if (item) item.rank = idx + 1;
       });
-      this.kriteriaList = [...this.kriteriaList];
-      try {
-        localStorage.removeItem('spk_criteria_ranks_10');
-      } catch(e) {}
+
+      // Hitung bobot matematis harmonik ROC
       this.hitungBobotROC();
-      this.saveSettings();
-      this.showToast("Prioritas kriteria dikembalikan ke default (Rank 1 s/d 10).", "info");
+
+      // Sinkronkan batas budget filter
+      this.budgetMaxFilter = budget > 0 ? budget : null;
+
+      // Buat kalimat penjelasan translasi yang cerdas & transparan
+      const top1 = this.kriteriaList.find(k => k.rank === 1);
+      const top2 = this.kriteriaList.find(k => k.rank === 2);
+      const top3 = this.kriteriaList.find(k => k.rank === 3);
+
+      const budgetStr = budget > 0 ? `Batas Budget Rp ${Number(budget).toLocaleString('id-ID')}` : 'Semua Budget';
+      this.penjelasanTranslasiROC = `Berdasarkan ${budgetStr} dan pilihan kebutuhan Anda: Kriteria ${top1.nama} (${top1.kode}) menempati Prioritas #1 (Rank 1 • ${(top1.bobot*100).toFixed(2)}%), disusul ${top2.nama} (${top2.kode}) di Rank 2 (${(top2.bobot*100).toFixed(2)}%), dan ${top3.nama} (${top3.kode}) di Rank 3 (${(top3.bobot*100).toFixed(2)}%).`;
+    },
+
+    setBudget(amount) {
+      this.konsultasiForm.budgetAmount = amount;
+      this.translateKonsultasiToROC();
+    },
+
+    setKonsultasi(field, val) {
+      this.konsultasiForm[field] = val;
+      this.translateKonsultasiToROC();
+    },
+
+    resetKonsultasi() {
+      this.konsultasiForm = {
+        budgetAmount: 10000000,
+        preferensiHarga: 'hemat',
+        kebutuhanCPU: 'standar',
+        kebutuhanRAM: 'standar',
+        kebutuhanSSD: 'standar',
+        kebutuhanGPU: 'standar',
+        kebutuhanBaterai: 'awet',
+        kebutuhanBobot: 'ringan',
+        kebutuhanLayar: 'standar',
+        kebutuhanGaransi: 'standar',
+        kebutuhanUpgrade: 'standar'
+      };
+      this.brandFilter = 'all';
+      this.kategoriFilter = 'all';
+      this.searchQuery = '';
+      this.filterStatus = 'all';
+      this.translateKonsultasiToROC();
+      this.showToast("Formulir kebutuhan telah direset ke setelan awal.", "info");
     },
 
     // 2. MEMUAT DATA LAPTOP MELALUI SUPABASE SERVICE

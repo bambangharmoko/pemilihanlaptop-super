@@ -210,207 +210,298 @@
       </p>
     </div>
 
-    <!-- 1. ATUR PRIORITAS 10 KRITERIA LAPTOP (METODE ROC) -->
+    <!-- 1. FORMULIR KONSULTASI KEBUTUHAN LAPTOP (BAHASA SEHARI-HARI PELANGGAN) -->
     <section class="bg-white rounded-3xl p-5 sm:p-7 border border-slate-200/90 shadow-sm mb-8 no-print">
       
       <!-- Section Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-5 gap-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 mb-6 gap-3">
         <div>
           <div class="flex items-center space-x-2">
             <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">1</span>
-            <h2 class="text-base sm:text-lg font-bold text-slate-900">Tentukan Prioritas Spesifikasi Laptop (Metode ROC)</h2>
+            <h2 class="text-base sm:text-lg font-bold text-slate-900">Konsultasi Kebutuhan & Spesifikasi Laptop Pelanggan</h2>
           </div>
-          <p class="text-xs text-slate-500 mt-1 pl-8">Atur peringkat prioritas dari 1 (Paling Utama) sampai 10 (Terendah) sesuai kebutuhan Anda secara fleksibel. Bobot dihitung otomatis dengan metode <strong>Rank Order Centroid (ROC)</strong>.</p>
+          <p class="text-xs text-slate-500 mt-1 pl-8">Tentukan preferensi laptop yang Anda inginkan secara bebas. Sistem secara otomatis menerjemahkan pilihan Anda ke urutan bobot <strong>Rank Order Centroid (ROC)</strong> & perankingan <strong>TOPSIS</strong>.</p>
         </div>
         
         <div class="flex items-center space-x-2 self-start sm:self-auto pl-8 sm:pl-0">
-          <button @click="resetPrioritas()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50/60 hover:bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 transition flex items-center space-x-1">
+          <button @click="resetKonsultasi()" class="text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/60 px-3 py-1.5 rounded-lg border border-slate-200 transition flex items-center space-x-1">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-            <span>Reset Default (1 - 10)</span>
+            <span>Reset Pilihan</span>
           </button>
         </div>
       </div>
 
-      <!-- FORMULA & PANDUAN PELANGGAN ROC -->
-      <div class="mb-5 p-4 rounded-2xl bg-indigo-950 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm border border-indigo-900">
-        <div class="flex items-center space-x-3">
-          <div class="w-9 h-9 rounded-xl bg-indigo-800 flex items-center justify-center text-lg shrink-0">📐</div>
-          <div>
-            <div class="flex items-center space-x-2">
-              <span class="text-xs font-black uppercase tracking-wider text-indigo-300">Rumus Pembobotan Rank Order Centroid (ROC, m = 10)</span>
-              <span class="text-[10px] bg-indigo-800 text-indigo-200 px-2 py-0.5 rounded-full font-bold">Subjektif Konsultatif</span>
-            </div>
-            <p class="text-xs text-slate-200 mt-0.5">Bobot $w_i$ langsung dihitung otomatis dari urutan prioritas Anda: <strong class="text-amber-300 font-mono">w_i = (1/10) &sum;_{k=i}^{10} (1/k)</strong></p>
-          </div>
-        </div>
-        <div class="text-[11px] font-mono bg-indigo-900/90 px-3.5 py-2 rounded-xl border border-indigo-700/80 text-indigo-200 whitespace-nowrap self-stretch sm:self-auto text-center sm:text-right">
-          Rank 1: <strong class="text-emerald-400">29.29%</strong> &bull; Rank 2: <strong class="text-emerald-400">19.29%</strong> &bull; Rank 10: <strong class="text-emerald-400">1.00%</strong>
-        </div>
-      </div>
-
-      <!-- LIVE SUMMARY BANNER PRIORITAS TERKINI -->
-      <div class="mb-5 p-3.5 rounded-xl bg-indigo-50 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-indigo-900 font-semibold">
-        <div class="flex items-center space-x-2">
-          <span>🎯</span>
-          <span x-text="getTopPrioritasSummary()"></span>
-        </div>
-        <span class="text-[11px] text-indigo-600 bg-white px-2.5 py-1 rounded-lg border border-indigo-200 font-bold self-start sm:self-auto">Total Bobot: 100.00%</span>
-      </div>
-
-      <!-- GRID 10 KRITERIA CARDS DENGAN BAHASA SEHARI-HARI -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <template x-for="item in kriteriaList" :key="item.id">
-          <div class="p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between"
-               :class="item.rank === 1 ? 'bg-indigo-50/50 border-indigo-400 ring-2 ring-indigo-500/10 shadow-xs' : 'bg-slate-50/60 border-slate-200 hover:border-slate-300 hover:bg-white'">
-            
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center space-x-1.5">
-                  <span class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-white text-slate-800 border border-slate-200 font-mono" x-text="item.kode"></span>
-                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        :class="item.tipe === 'Cost' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-blue-100 text-blue-800 border border-blue-200'"
-                        x-text="item.tipe"></span>
-                </div>
-                <span class="text-[11px] font-bold font-mono text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-md" x-text="(item.bobot * 100).toFixed(2) + '%'"></span>
-              </div>
-              <h3 class="font-bold text-slate-900 text-xs sm:text-sm" x-text="item.nama"></h3>
-              <p class="text-[10.5px] text-slate-500 mt-1 leading-relaxed line-clamp-3" x-text="item.keterangan"></p>
-            </div>
-
-            <!-- Priority Dropdown & Progress Bar (Rank 1 - 10) -->
-            <div class="mt-3.5 pt-3 border-t border-slate-200/80">
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="text-[10.5px] font-semibold text-slate-600">Peringkat Prioritas:</label>
-                <span class="text-[10.5px] font-bold font-mono text-indigo-600" x-text="'#' + item.rank"></span>
-              </div>
-              <select x-model.number="item.rank" @change="onRankChange()" 
-                      class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
-                <option value="1">Rank 1 (Paling Utama • 29.29%)</option>
-                <option value="2">Rank 2 (19.29%)</option>
-                <option value="3">Rank 3 (14.29%)</option>
-                <option value="4">Rank 4 (10.95%)</option>
-                <option value="5">Rank 5 (8.45%)</option>
-                <option value="6">Rank 6 (6.45%)</option>
-                <option value="7">Rank 7 (4.79%)</option>
-                <option value="8">Rank 8 (3.36%)</option>
-                <option value="9">Rank 9 (2.11%)</option>
-                <option value="10">Rank 10 (Terendah • 1.00%)</option>
-              </select>
-              
-              <!-- Mini Weight Visual Bar -->
-              <div class="w-full bg-slate-200 rounded-full h-1.5 mt-2 overflow-hidden">
-                <div class="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" :style="'width: ' + (item.bobot * 100 * 3.3) + '%'"></div>
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
-
-    </section>
-
-    <!-- 2. FILTER KRITERIA PENCARIAN & BUDGET PELANGGAN -->
-    <section class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/90 shadow-sm mb-8 no-print">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-slate-100 mb-4 gap-2">
-        <div class="flex items-center space-x-2">
-          <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">2</span>
-          <h2 class="text-base sm:text-lg font-bold text-slate-900">Filter Kriteria Pencarian & Budget Pelanggan</h2>
-        </div>
-        <button @click="resetAllFilters()" class="text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/60 px-3 py-1.5 rounded-lg border border-slate-200 transition flex items-center space-x-1 self-start sm:self-auto">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-          <span>Reset Filter</span>
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 1. Maksimal Budget (Rp) -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
-            <span>💰 Batas Budget Maksimal:</span>
-            <span x-show="budgetMaxFilter" class="text-[11px] font-extrabold text-indigo-600 font-mono" x-text="'≤ Rp ' + Number(budgetMaxFilter).toLocaleString('id-ID')"></span>
-          </label>
-          <input type="number" x-model.number="budgetMaxFilter" @input="kalkulasiTOPSIS(false)" placeholder="Contoh: 15000000 (Semua Budget)"
-                 class="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
-          <!-- Quick Budget Chips -->
-          <div class="flex flex-wrap gap-1 mt-2">
-            <button @click="setQuickBudget(null)" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
-                    :class="!budgetMaxFilter ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200'">Semua</button>
-            <button @click="setQuickBudget(8000000)" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
-                    :class="budgetMaxFilter === 8000000 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200'">≤ 8 Jt</button>
-            <button @click="setQuickBudget(12000000)" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
-                    :class="budgetMaxFilter === 12000000 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200'">≤ 12 Jt</button>
-            <button @click="setQuickBudget(16000000)" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
-                    :class="budgetMaxFilter === 16000000 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200'">≤ 16 Jt</button>
-            <button @click="setQuickBudget(25000000)" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
-                    :class="budgetMaxFilter === 25000000 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200'">≤ 25 Jt</button>
-          </div>
-        </div>
-
-        <!-- 2. Pilihan Merk / Brand -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">🏷️ Merk / Brand Laptop:</label>
-          <select x-model="brandFilter" @change="kalkulasiTOPSIS(false)"
-                  class="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
-            <option value="all">Semua Merk Laptop</option>
-            <template x-for="brand in getAvailableBrands()" :key="brand">
-              <option :value="brand" x-text="brand"></option>
-            </template>
-          </select>
-          <p class="text-[10.5px] text-slate-400 mt-1.5">Pilih brand spesifik (Asus, Lenovo, Acer, Apple, HP, dll).</p>
-        </div>
-
-        <!-- 3. Kategori Penggunaan -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">💻 Kategori Penggunaan:</label>
-          <select x-model="kategoriFilter" @change="kalkulasiTOPSIS(false)"
-                  class="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
-            <option value="all">Semua Kategori Laptop</option>
-            <template x-for="cat in getAvailableKategoris()" :key="cat">
-              <option :value="cat" x-text="cat"></option>
-            </template>
-          </select>
-          <p class="text-[10.5px] text-slate-400 mt-1.5">Filter model Gaming, Mahasiswa, Ultrabook, dll.</p>
-        </div>
-
-        <!-- 4. Status Stok & Cari Nama/Model -->
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">🔍 Cari Model / Seri Laptop:</label>
-          <div class="relative">
-            <input type="text" x-model="searchQuery" @input="kalkulasiTOPSIS(false)" placeholder="Cari misal: TUF, Zenbook, Ideapad..."
-                   class="w-full text-xs font-semibold bg-slate-50 border border-slate-300 rounded-xl pl-8 pr-3 py-2.5 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
-            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-          </div>
-          <div class="flex items-center space-x-2 mt-2">
-            <span class="text-[11px] font-bold text-slate-500">Ketersediaan:</span>
-            <div class="flex space-x-1">
-              <button @click="setStatusFilter('all')" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
-                      :class="filterStatus === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 border-slate-200'">Semua</button>
-              <button @click="setStatusFilter('ready')" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
-                      :class="filterStatus === 'ready' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 text-slate-600 border-slate-200'">Ready</button>
-              <button @click="setStatusFilter('indent')" class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition"
-                      :class="filterStatus === 'indent' ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-100 text-slate-600 border-slate-200'">Indent</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Active Filter Summary & Calculate Button -->
-      <div class="mt-4 pt-3.5 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600">
-          <span class="font-bold text-slate-700">Hasil Filter:</span>
-          <span class="px-2.5 py-0.5 rounded-full font-extrabold text-[11px]"
-                :class="hasilRanking.length > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
-                x-text="hasilRanking.length + ' Laptop Sesuai Kriteria'"></span>
-          <span x-show="budgetMaxFilter" class="bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded text-[10.5px]" x-text="'Budget ≤ ' + Number(budgetMaxFilter).toLocaleString('id-ID')"></span>
-          <span x-show="brandFilter !== 'all'" class="bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded text-[10.5px]" x-text="'Merk: ' + brandFilter"></span>
-          <span x-show="kategoriFilter !== 'all'" class="bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded text-[10.5px]" x-text="'Kategori: ' + kategoriFilter"></span>
-        </div>
+      <!-- FORM KONSULTASI FLEKSIBEL (10 ASPEK LAPTOP) -->
+      <div class="space-y-5">
         
-        <button @click="kalkulasiTOPSIS(true)" :disabled="laptopsData.length === 0"
-                class="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-indigo-200 transition flex items-center justify-center space-x-2">
-          <svg class="w-4 h-4 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-          <span>Kalkulasi Rekomendasi TOPSIS (10 Kriteria)</span>
-        </button>
+        <!-- 1. BUDGET MAKSIMAL (SATU-SATUNYA INPUT BUDGET) -->
+        <div class="p-4.5 rounded-2xl bg-gradient-to-r from-indigo-50/80 via-sky-50/40 to-slate-50 border border-indigo-100 shadow-2xs">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div class="max-w-md">
+              <label class="text-xs font-extrabold text-slate-900 flex items-center space-x-1.5">
+                <span class="text-base">💰</span>
+                <span>Batas Maksimal Budget yang Anda Siapkan:</span>
+              </label>
+              <p class="text-[11px] text-slate-500 mt-0.5">Budget $\le$ Rp 10 Juta otomatis menempatkan kriteria <strong>Harga (C1) di Rank 1 (Prioritas Utama • 29.29%)</strong>.</p>
+            </div>
+            
+            <div class="flex-grow max-w-lg">
+              <div class="relative">
+                <span class="absolute left-3.5 top-2.5 text-xs font-bold text-slate-400">Rp</span>
+                <input type="number" x-model.number="konsultasiForm.budgetAmount" @input="translateKonsultasiToROC()"
+                       placeholder="Contoh: 10000000 (Semua Budget)"
+                       class="w-full text-xs font-bold bg-white border border-slate-300 rounded-xl pl-10 pr-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-2xs">
+              </div>
+              <!-- Quick Budget Chips -->
+              <div class="flex flex-wrap gap-1 mt-2">
+                <button @click="setBudget(null)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
+                        :class="!konsultasiForm.budgetAmount ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">Semua Budget</button>
+                <button @click="setBudget(8000000)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
+                        :class="konsultasiForm.budgetAmount === 8000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 8 Juta</button>
+                <button @click="setBudget(10000000)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
+                        :class="konsultasiForm.budgetAmount === 10000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 10 Juta</button>
+                <button @click="setBudget(15000000)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
+                        :class="konsultasiForm.budgetAmount === 15000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 15 Juta</button>
+                <button @click="setBudget(22000000)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
+                        :class="konsultasiForm.budgetAmount === 22000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 22 Juta</button>
+                <button @click="setBudget(30000000)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border transition"
+                        :class="konsultasiForm.budgetAmount === 30000000 ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'">≤ 30 Juta</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRID 9 ASPEK SPESIFIKASI (FLEKSIBEL TANPA PRESET KAKU) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          
+          <!-- 2. CPU / PROSESOR -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center space-x-1.5 mb-1">
+                <span class="text-base">🚀</span>
+                <span class="text-xs font-bold text-slate-900">Kecepatan Prosesor (CPU)</span>
+              </div>
+              <p class="text-[10.5px] text-slate-500 mb-2">Untuk komputasi, multitasking, & aplikasi berat.</p>
+            </div>
+            <select x-model="konsultasiForm.kebutuhanCPU" @change="translateKonsultasiToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              <option value="kencang">🔥 Sangat Kencang (Coding / Render 3D / Berat)</option>
+              <option value="standar">⚡ Standar Cepat (Office / Kuliah / Browsing)</option>
+              <option value="biasa">🍃 Biasa Saja</option>
+            </select>
+          </div>
+
+          <!-- 3. RAM -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center space-x-1.5 mb-1">
+                <span class="text-base">🧠</span>
+                <span class="text-xs font-bold text-slate-900">Kapasitas Memori RAM</span>
+              </div>
+              <p class="text-[10.5px] text-slate-500 mb-2">Agar buka banyak aplikasi tanpa lag.</p>
+            </div>
+            <select x-model="konsultasiForm.kebutuhanRAM" @change="translateKonsultasiToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              <option value="besar">🚀 RAM Besar (16GB - 32GB+ Multitasking)</option>
+              <option value="standar">✨ Standar (8GB - 16GB Cukup Harian)</option>
+              <option value="biasa">🍃 Bebas / Biasa</option>
+            </select>
+          </div>
+
+          <!-- 4. SSD -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center space-x-1.5 mb-1">
+                <span class="text-base">💾</span>
+                <span class="text-xs font-bold text-slate-900">Penyimpanan Cepat SSD</span>
+              </div>
+              <p class="text-[10.5px] text-slate-500 mb-2">Kecepatan booting & simpan dokumen/game.</p>
+            </div>
+            <select x-model="konsultasiForm.kebutuhanSSD" @change="translateKonsultasiToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              <option value="lega">📦 Kapasitas Lega (1TB+ SSD NVMe Cepat)</option>
+              <option value="standar">⚡ Standar Cepat (512GB SSD)</option>
+            </select>
+          </div>
+
+          <!-- 5. GPU / GRAFIS -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center space-x-1.5 mb-1">
+                <span class="text-base">🎮</span>
+                <span class="text-xs font-bold text-slate-900">Kemampuan Grafis & Game (GPU)</span>
+              </div>
+              <p class="text-[10.5px] text-slate-500 mb-2">Untuk Game 3D, visual, & rendering video.</p>
+            </div>
+            <select x-model="konsultasiForm.kebutuhanGPU" @change="translateKonsultasiToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              <option value="gaming">🎮 Wajib GPU Diskrit (Gaming 3D / Render)</option>
+              <option value="standar">💻 Grafis Standar Cukup (Bukan Game Berat)</option>
+            </select>
+          </div>
+
+          <!-- 6. BATERAI -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center space-x-1.5 mb-1">
+                <span class="text-base">🔋</span>
+                <span class="text-xs font-bold text-slate-900">Daya Tahan Baterai</span>
+              </div>
+              <p class="text-[10.5px] text-slate-500 mb-2">Mobilitas penggunaan jauh dari colokan listrik.</p>
+            </div>
+            <select x-model="konsultasiForm.kebutuhanBaterai" @change="translateKonsultasiToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              <option value="awet">🔋 Wajib Baterai Awet (Tahan Seharian Luar)</option>
+              <option value="standar">⚡ Standar (Sering Dekat Colokan)</option>
+            </select>
+          </div>
+
+          <!-- 7. BOBOT / PORTABILITAS -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center space-x-1.5 mb-1">
+                <span class="text-base">🪶</span>
+                <span class="text-xs font-bold text-slate-900">Bobot & Ringan Dibawa</span>
+              </div>
+              <p class="text-[10.5px] text-slate-500 mb-2">Kemudahan dibawa di tas ransel harian.</p>
+            </div>
+            <select x-model="konsultasiForm.kebutuhanBobot" @change="translateKonsultasiToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              <option value="ringan">🪶 Wajib Sangat Ringan (&le; 1.4 kg Tipis)</option>
+              <option value="standar">💼 Bobot Bebas / Standar</option>
+            </select>
+          </div>
+
+          <!-- 8. LAYAR & WARNA -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center space-x-1.5 mb-1">
+                <span class="text-base">✨</span>
+                <span class="text-xs font-bold text-slate-900">Kualitas Visual Layar</span>
+              </div>
+              <p class="text-[10.5px] text-slate-500 mb-2">Ketajaman warna, panel OLED, & refresh rate.</p>
+            </div>
+            <select x-model="konsultasiForm.kebutuhanLayar" @change="translateKonsultasiToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              <option value="oled">🎨 Wajib Layar Akurat (OLED / 100% sRGB / 144Hz)</option>
+              <option value="standar">🖥️ Layar Standar FHD Cukup</option>
+            </select>
+          </div>
+
+          <!-- 9. GARANSI RESMI -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center space-x-1.5 mb-1">
+                <span class="text-base">🛡️</span>
+                <span class="text-xs font-bold text-slate-900">Garansi Resmi & Proteksi</span>
+              </div>
+              <p class="text-[10.5px] text-slate-500 mb-2">Layanan purna jual & perlindungan ADP.</p>
+            </div>
+            <select x-model="konsultasiForm.kebutuhanGaransi" @change="translateKonsultasiToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              <option value="panjang">🛡️ Wajib Garansi Panjang + Proteksi ADP</option>
+              <option value="standar">📜 Garansi Standar 1-2 Tahun</option>
+            </select>
+          </div>
+
+          <!-- 10. KEMUDAHAN UPGRADE -->
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center space-x-1.5 mb-1">
+                <span class="text-base">🔧</span>
+                <span class="text-xs font-bold text-slate-900">Kemudahan Upgrade Sendiri</span>
+              </div>
+              <p class="text-[10.5px] text-slate-500 mb-2">Slot tambahan RAM/SSD untuk jangka panjang.</p>
+            </div>
+            <select x-model="konsultasiForm.kebutuhanUpgrade" @change="translateKonsultasiToROC()"
+                    class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              <option value="wajib">🔧 Wajib Bisa Tambah RAM & SSD Sendiri</option>
+              <option value="standar">📦 On-Board / Tanpa Upgrade Tidak Masalah</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- FILTER TAMBAHAN (MERK, PENCARIAN, & STATUS STOK) -->
+        <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full md:w-auto flex-grow">
+            <!-- Filter Merk -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">🏷️ Merk Laptop:</label>
+              <select x-model="brandFilter" @change="kalkulasiTOPSIS(false)"
+                      class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                <option value="all">Semua Merk</option>
+                <template x-for="brand in getAvailableBrands()" :key="brand">
+                  <option :value="brand" x-text="brand"></option>
+                </template>
+              </select>
+            </div>
+
+            <!-- Cari Model -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">🔍 Cari Model / Seri:</label>
+              <input type="text" x-model="searchQuery" @input="kalkulasiTOPSIS(false)" placeholder="Cari: TUF, Zenbook..."
+                     class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            </div>
+
+            <!-- Status Stok -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">📦 Status Ketersediaan:</label>
+              <select x-model="filterStatus" @change="kalkulasiTOPSIS(false)"
+                      class="w-full text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                <option value="all">Semua Stok</option>
+                <option value="ready">Ready di Toko</option>
+                <option value="indent">Indent / Pre-Order</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- HASIL TRANSLASI BAHASA SEHARI-HARI KE MATRIKS BOBOT ROC (TRANSPARANSI METODE) -->
+        <div class="p-4.5 rounded-2xl bg-indigo-950 text-white border border-indigo-900 shadow-sm">
+          <div class="flex items-start space-x-3 mb-3">
+            <div class="w-8 h-8 rounded-xl bg-indigo-800 flex items-center justify-center text-base shrink-0">📐</div>
+            <div>
+              <span class="text-xs font-black uppercase tracking-wider text-indigo-300 block">Hasil Translasi Otomatis ke Rumus ROC:</span>
+              <p class="text-xs text-slate-200 mt-0.5 leading-relaxed" x-text="penjelasanTranslasiROC"></p>
+            </div>
+          </div>
+
+          <!-- 10 Kriteria Rank Badges Horizontal -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1.5 pt-3 border-t border-indigo-800/80">
+            <template x-for="item in [...kriteriaList].sort((a,b) => a.rank - b.rank)" :key="item.id">
+              <div class="p-2 rounded-xl text-center flex flex-col justify-between"
+                   :class="item.rank === 1 ? 'bg-emerald-500/25 border border-emerald-400/60 ring-1 ring-emerald-400/30' : (item.rank <= 3 ? 'bg-indigo-800/80 border border-indigo-700' : 'bg-indigo-900/50 border border-indigo-800/60')">
+                <span class="text-[10px] font-mono font-black"
+                      :class="item.rank === 1 ? 'text-emerald-300' : (item.rank <= 3 ? 'text-indigo-200' : 'text-slate-400')"
+                      x-text="'Rank #' + item.rank"></span>
+                <span class="text-xs font-bold text-white truncate my-0.5" x-text="item.kode + ' ' + item.nama"></span>
+                <span class="text-[10.5px] font-mono font-extrabold"
+                      :class="item.rank === 1 ? 'text-emerald-400' : 'text-indigo-300'"
+                      x-text="(item.bobot * 100).toFixed(2) + '%'"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- TOMBOL AKSI UTAMA KALKULASI TOPSIS -->
+        <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center space-x-2 text-xs text-slate-600">
+            <span class="font-bold text-slate-700">Kandidat Laptop Sesuai Filter:</span>
+            <span class="px-2.5 py-0.5 rounded-full font-extrabold text-[11px]"
+                  :class="laptopsData.length > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                  x-text="laptopsData.length + ' Laptop Tersedia'"></span>
+          </div>
+
+          <button @click="kalkulasiTOPSIS(true)" :disabled="laptopsData.length === 0"
+                  class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md shadow-indigo-200 hover:shadow-indigo-300 transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2">
+            <svg class="w-4 h-4 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span>Kalkulasi Rekomendasi Laptop Terbaik (TOPSIS 10 Kriteria)</span>
+          </button>
+        </div>
+
       </div>
+
     </section>
 
     <!-- STATE JIKA DATABASE MASIH KOSONG -->
@@ -448,14 +539,14 @@
       </div>
     </section>
 
-    <!-- 3. HASIL PERANKINGAN TOPSIS 10 DIMENSI -->
+    <!-- 2. HASIL PERANKINGAN TOPSIS 10 DIMENSI -->
     <section id="hasilSection" class="mb-10" x-show="hasilRanking.length > 0" x-transition>
       
       <!-- Section Title & Toolbars -->
       <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div class="flex items-center space-x-2">
-            <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">3</span>
+            <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">2</span>
             <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Hasil Rekomendasi Laptop Terbaik (10 Kriteria)</h2>
           </div>
           <p class="text-xs text-slate-500 mt-0.5 pl-8">Urutan peringkat berdasarkan nilai preferensi kedekatan relatif <span class="font-mono font-bold text-slate-700">(V_i)</span> tertinggi terhadap Solusi Ideal 10 Dimensi.</p>
